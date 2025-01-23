@@ -1,50 +1,31 @@
-# template-for-proposals
+# Deferred re-exports
 
-A repository template for ECMAScript proposals.
+## Introduction
 
-## Before creating a proposal
+Web applications often have a large amount of JavaScript code, which can have a significant impact on startup time. One way to reduce this impact is by carefully loading as little code needed at any time, potentially prefetching code that is likely to be needed in the future. However, this has proven to be difficult in practice, often leading to under-optimized web applications.
 
-Please ensure the following:
-  1. You have read the [process document](https://tc39.github.io/process-document/)
-  1. You have reviewed the [existing proposals](https://github.com/tc39/proposals/)
-  1. You are aware that your proposal requires being a member of TC39, or locating a TC39 delegate to “champion” your proposal
+The [`import defer` proposal](https://github.com/tc39/proposal-defer-import-eval/) tackled part of this problem, by allowing with minimal friction to defer execution of code that is not needed during the application startup. It does so by introducing syntax to mark _import_ declarations as "deferrable until when their exports are accessed":
 
-## Create your proposal repo
+```js
+// This declaration _loads_ helpers.js and its dependencies,
+// without executing it yet.
+import defer * as helpers from "./helpers.js";
 
-Follow these steps:
-  1. Click the green [“use this template”](https://github.com/tc39/template-for-proposals/generate) button in the repo header. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
-  1. Update ecmarkup and the biblio to the latest version: `npm install --save-dev ecmarkup@latest && npm install --save-dev --save-exact @tc39/ecma262-biblio@latest`.
-  1. Go to your repo settings page:
-      1. Under “General”, under “Features”, ensure “Issues” is checked, and disable “Wiki”, and “Projects” (unless you intend to use Projects)
-      1. Under “Pull Requests”, check “Always suggest updating pull request branches” and “automatically delete head branches”
-      1. Under the “Pages” section on the left sidebar, and set the source to “deploy from a branch”, select “gh-pages” in the branch dropdown, and then ensure that “Enforce HTTPS” is checked.
-      1. Under the “Actions” section on the left sidebar, under “General”, select “Read and write permissions” under “Workflow permissions” and click “Save”
-  1. [“How to write a good explainer”][explainer] explains how to make a good first impression.
+function fn() {
+  // helpers.js is only executed at this point.
+  helpers.doSomething();
+}
+```
 
-      > Each TC39 proposal should have a `README.md` file which explains the purpose
-      > of the proposal and its shape at a high level.
-      >
-      > ...
-      >
-      > The rest of this page can be used as a template ...
+As part of the proposal, we considered ([2023-11 slides](https://docs.google.com/presentation/d/1l-H2ntEDZGAWvtuOup1TJdylZsV1epKVSejVM-GwHLU), [2024-04 `export ... from` slides](https://docs.google.com/presentation/d/1iM5cRgdRXLWLq_GxgRvzYmUTXEK6gzH_8QNgLKMmv7o)) adding similar functionality to `export ... from` declaration. However, `export ... from` declaration have the opportunity to also skip _loading_ of unused modules, and we thus when advancing `import defer` to Stage 2.7 we decided ([2024-04 `import defer` slides](https://docs.google.com/presentation/d/1oPEF8nA9Iq5cAqjN-FqMigNNfz6lWCUbNfIsEjRXf4Y)) to keep the equivalend `export ... from` feature behind as a separate proposal.
 
-      Your explainer can point readers to the `index.html` generated from `spec.emu`
-      via markdown like
+## Problem statement
 
-      ```markdown
-      You can browse the [ecmarkup output](https://ACCOUNT.github.io/PROJECT/)
-      or browse the [source](https://github.com/ACCOUNT/PROJECT/blob/HEAD/spec.emu).
-      ```
+A common pattern that libraries adopt to improve DX of their consumers is to have a single entry point that re-exports all the public APIs. This however has a problem: it leads to a lot of unused code being included in the module graph.
 
-      where *ACCOUNT* and *PROJECT* are the first two path elements in your project's Github URL.
-      For example, for github.com/**tc39**/**template-for-proposals**, *ACCOUNT* is “tc39”
-      and *PROJECT* is “template-for-proposals”.
+Some tools workaround this problem using a technique called "tree-shaking": they trace the dependencies of the indivudual bindings exported by a module, and remove the transivite imports (or re-exports) that are only needed for unused exports. However, this operation is not always possible due to side effects that may caused by modules being loaded: different tools choose different trade-offs between code size and correctness, often leading to under-optimization of web applications or to difficult-to-debug issues caused by non-pure modules not being executed as expected. This technique is also _not_ possible when running ESM directly in the browser, as it requires whole-program analysys.
 
-
-## Maintain your proposal repo
-
-  1. Make your changes to `spec.emu` (ecmarkup uses HTML syntax, but is not HTML, so I strongly suggest not naming it “.html”)
-  1. Any commit that makes meaningful changes to the spec, should run `npm run build` to verify that the build will succeed and the output looks as expected.
-  1. Whenever you update `ecmarkup`, run `npm run build` to verify that the build will succeed and the output looks as expected.
-
-  [explainer]: https://github.com/tc39/how-we-work/blob/HEAD/explainer.md
+This proposal aims to address the problem by allowing libraries to mark re-exports as "ignore if unused", defining:
+1. clear semantics to follow, rather than relying on tooling-defined heuristics;
+2. semantics that can also be implemented by native JS platforms to avoid loading unused code;
+3. an integration with the `import defer` proposal, to allow these re-exports to benefit from the same "after loading, only execute if actually needed" semantics.
