@@ -39,58 +39,15 @@ contributors: Nicolò Ribaudo
     <emu-clause id="sec-module-semantics">
       <h1>Module Semantics</h1>
 
-      <emu-clause id="sec-getmodulerequestsforoptionalindirectexports" type="abstract operation">
-        <h1>
-          <ins>
-            GetModuleRequestsOptionalIndirectExports (
-              _module_: a Cyclic Module Record,
-              _importedNames_: ~all~ or a List of Strings,
-            ): a List of ModuleRequest Records
-          </ins>
-        </h1>
+      <emu-clause id="sec-static-semantics-modulerequests" oldids="sec-module-semantics-static-semantics-modulerequests,sec-imports-static-semantics-modulerequests,sec-exports-static-semantics-modulerequests" type="sdo" number="4">
+        <h1>Static Semantics: ModuleRequests ( ): a List of ModuleRequest Records</h1>
         <dl class="header">
-          <dt>description</dt>
-          <dd></dd>
         </dl>
-
+        <emu-grammar>
+          <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</ins>
+        </emu-grammar>
         <emu-alg>
-          1. Let _requests_ be a new empty List.
-          1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExports]], do
-            1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
-              1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
-              1. Let _existingRequest_ be ~empty~.
-              1. For each ModuleRequest Record _r_ in _requests_, do
-                1. If _existingRequest_ is ~empty~ and ModuleRequestsEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
-                  1. Set _existingRequest_ to _r_.
-              1. Let _newImportedNames_ be ~all~.
-              1. Assert: _oie_.[[ImportName]] is a String or ~all~.
-              1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
-              1. If _existingRequest_ is ~empty~, then
-                1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_ }.
-                1. Append _request_ to _requests_.
-              1. Else,
-                1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
-          1. Return _requests_.
-        </emu-alg>
-      </emu-clause>
-
-      <emu-clause id="sec-mergeimportednames" type="abstract operation">
-        <h1>
-          <ins>
-            MergeImportedNames (
-              _a_: ~all~ or a List of Strings,
-              _b_: ~all~ or a List of Strings,
-            ): ~all~ or a List of Strings
-          </ins>
-        </h1>
-        <dl class="header">
-          <dt>description</dt>
-          <dd></dd>
-        </dl>
-
-        <emu-alg>
-          1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
-          1. Return the list-concatenation of _a_ and _b_.
+          1. <ins>Return a new empty List.</ins>
         </emu-alg>
       </emu-clause>
 
@@ -181,7 +138,7 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
-                <ins>[[OptionalIndirectExports]]</ins>
+                <ins>[[OptionalIndirectExportEntries]]</ins>
               </td>
               <td>
                 <ins>a List of ExportEntry Records whose [[LocalName]] is *null*.</ins>
@@ -1328,6 +1285,110 @@ contributors: Nicolò Ribaudo
             </table>
           </emu-table>
         </emu-clause>
+      </emu-clause>
+
+      <emu-clause id="sec-source-text-module-records" number="7">
+        <h1>Source Text Module Records</h1>
+
+        <emu-clause id="sec-parsemodule" type="abstract operation">
+          <h1>
+            ParseModule (
+              _sourceText_: ECMAScript source text,
+              _realm_: a Realm Record,
+              _hostDefined_: anything,
+            ): a Source Text Module Record or a non-empty List of *SyntaxError* objects
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It creates a Source Text Module Record based upon the result of parsing _sourceText_ as a |Module|.</dd>
+          </dl>
+          <emu-alg>
+            1. Let _body_ be ParseText(_sourceText_, |Module|).
+            1. If _body_ is a List of errors, return _body_.
+            1. Let _requestedModules_ be the ModuleRequests of _body_.
+            1. Let _importEntries_ be the ImportEntries of _body_.
+            1. Let _importedBoundNames_ be ImportedLocalNames(_importEntries_).
+            1. Let _indirectExportEntries_ be a new empty List.
+            1. Let _localExportEntries_ be a new empty List.
+            1. Let _starExportEntries_ be a new empty List.
+            1. Let _exportEntries_ be the ExportEntries of _body_.
+            1. For each ExportEntry Record _ee_ of _exportEntries_, do
+              1. If _ee_.[[ModuleRequest]] is *null*, then
+                1. If _importedBoundNames_ does not contain _ee_.[[LocalName]], then
+                  1. Append _ee_ to _localExportEntries_.
+                1. Else,
+                  1. Let _ie_ be the element of _importEntries_ whose [[LocalName]] is _ee_.[[LocalName]].
+                  1. If _ie_.[[ImportName]] is ~namespace-object~, then
+                    1. NOTE: This is a re-export of an imported module namespace object.
+                    1. Append _ee_ to _localExportEntries_.
+                  1. Else,
+                    1. NOTE: This is a re-export of a single name.
+                    1. Append the ExportEntry Record { [[ModuleRequest]]: _ie_.[[ModuleRequest]], [[ImportName]]: _ie_.[[ImportName]], [[LocalName]]: *null*, [[ExportName]]: _ee_.[[ExportName]] } to _indirectExportEntries_.
+              1. Else if _ee_.[[ImportName]] is ~all-but-default~, then
+                1. Assert: _ee_.[[ExportName]] is *null*.
+                1. Append _ee_ to _starExportEntries_.
+              1. Else,
+                1. Append _ee_ to _indirectExportEntries_.
+            1. <ins>Let _optionalIndirectExportsEntries_ be OptionalIndirectExportEntries of _body_.</ins>
+            1. Let _async_ be _body_ Contains `await`.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_,</ins> [[DFSIndex]]: ~empty~, [[DFSAncestorIndex]]: ~empty~ }.
+          </emu-alg>
+        </emu-clause>
+      </emu-clause>
+
+      <emu-clause id="sec-getmodulerequestsforoptionalindirectexports" type="abstract operation" number="100">
+        <h1>
+          <ins>
+            GetModuleRequestsOptionalIndirectExports (
+              _module_: a Cyclic Module Record,
+              _importedNames_: ~all~ or a List of Strings,
+            ): a List of ModuleRequest Records
+          </ins>
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+
+        <emu-alg>
+          1. Let _requests_ be a new empty List.
+          1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
+            1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+              1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
+              1. Let _existingRequest_ be ~empty~.
+              1. For each ModuleRequest Record _r_ in _requests_, do
+                1. If _existingRequest_ is ~empty~ and ModuleRequestsEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
+                  1. Set _existingRequest_ to _r_.
+              1. Let _newImportedNames_ be ~all~.
+              1. Assert: _oie_.[[ImportName]] is a String or ~all~.
+              1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
+              1. If _existingRequest_ is ~empty~, then
+                1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_ }.
+                1. Append _request_ to _requests_.
+              1. Else,
+                1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
+          1. Return _requests_.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-mergeimportednames" type="abstract operation">
+        <h1>
+          <ins>
+            MergeImportedNames (
+              _a_: ~all~ or a List of Strings,
+              _b_: ~all~ or a List of Strings,
+            ): ~all~ or a List of Strings
+          </ins>
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+
+        <emu-alg>
+          1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
+          1. Return the list-concatenation of _a_ and _b_.
+        </emu-alg>
       </emu-clause>
     </emu-clause>
 
