@@ -445,6 +445,11 @@ contributors: Nicolò Ribaudo
             <dd>On success, Link transitions this module's [[Status]] from ~unlinked~ to ~linked~. On failure, an exception is thrown and this module's [[Status]] remains ~unlinked~. (Most of the work is done by the auxiliary function InnerModuleLinking.)</dd>
           </dl>
 
+          <emu-note type="editor">
+            <p>TODO: Either we add an _importedNames_ parameter, or dynamic import will have to be responsible for linking all the defrred reexports.</p>
+            <p>If we add that parameter, we must be careful because the used deferred re-exports of a module should be linked _after_ calling InitializeEnvironment on the module itself.</p>
+          </emu-note>
+
           <emu-alg>
             1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Let _stack_ be a new empty List.
@@ -485,14 +490,15 @@ contributors: Nicolò Ribaudo
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _index_ to _index_ + 1.
               1. Append _module_ to _stack_.
-              1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
-                1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-                1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
-                1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
-                  1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
-                  1. If _requiredModule_.[[Status]] is ~linking~, then
-                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+              1. <ins>Set _index_ to ? LinkRequestedModules(_module_, _module_, _module_.[[RequestedModules]], _stack_, _index_).</ins>
+              1. <del>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</del>
+                1. <del>Let _requiredModule_ be GetImportedModule(_module_, _request_).</del>
+                1. <del>Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).</del>
+                1. <del>If _requiredModule_ is a Cyclic Module Record, then</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.</del>
+                  1. <del>If _requiredModule_.[[Status]] is ~linking~, then</del>
+                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
               1. Perform ? _module_.InitializeEnvironment().
               1. Assert: _module_ occurs exactly once in _stack_.
               1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
@@ -506,6 +512,38 @@ contributors: Nicolò Ribaudo
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
               1. Return _index_.
             </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-LinkRequestedModules" type="abstract operation">
+            <h1>
+              <ins>
+                LinkRequestedModules (
+                  _referrer_: a Cyclic Module Record,
+                  _dfsAncestor_: a Cyclic Module Record,
+                  _moduleRequests_: a List of ModuleRequest Records,
+                  _stack_: a List of Cyclic Module Records,
+                  _index_: a non-negative integer,
+                ): either a normal completion containing a non-negative integer or a throw completion
+              </ins>
+            </h1>
+            <dl class="header"></dl>
+            <emu-alg>
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
+                1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
+                1. If _requiredModule_ is a Cyclic Module Record, then
+                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
+                  1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
+                  1. If _requiredModule_.[[Status]] is ~linking~, then
+                    1. Set _dfsAncestor_.[[DFSAncestorIndex]] to min(_dfsAncestor_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
+                  1. Set _index_ to ? LinkRequestedModules(_requiredModule_, _dfsAncestor_, _indirectRequests_, _stack_, _index_).
+              1. Return _index_.
+            </emu-alg>
+
+            <emu-note type="editor">
+              TODO: There is an infinite loop if two modules `export defer` from each other.
+            </emu-note>
           </emu-clause>
         </emu-clause>
 
