@@ -50,6 +50,23 @@ export defer { sub } from "./math/sub.js";
 
 When a module imports the module above using, for example, `import { add } from "./math.js";`, it will only _load_ (and thus, _execute_) `./math.js` and `./math/add.js`, skipping `./math/sub.js` and all its dependencies.
 
+### Execution order
+
+Deferred re-exports are executed _after_ (if they are executed) the module that re-exports them, in the order they are re-exported. Given this example:
+```js
+// barrel.js
+export defer { a } from "./a.js";
+export { b } from "./b.js";
+export defer { c } from "./c.js";
+export { d } from "./d.js";
+export defer { e } from "./e.js";
+```
+```js
+// entrypoint.js
+import { e, a, d } from "./barrel.js";
+```
+The execution order will be `b.js`, `d.js`, `barrel.js`, `a.js`, `e.js`, `entrypoint.js`.
+
 ### Integration with `import defer`
 
 The `import defer` proposal established that the `defer` keyword means "only execute this module when I actually need it", when using _namespace_ imports. On module namespace objects, `export defer` would follow similar semantics:
