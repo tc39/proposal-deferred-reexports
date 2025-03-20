@@ -9,6 +9,10 @@ stage: -1
 contributors: Nicolò Ribaudo
 </pre>
 
+<emu-note type="editor">
+  <p style="margin-left:1em">NOTE: The diff markers are on top of <a href="https://tc39.es/proposal-defer-import-eval/">https://tc39.es/proposal-defer-import-eval/</a>.</p>
+</emu-note>
+
 <emu-clause id="sec-ordinary-and-exotic-objects-behaviours" number="10">
   <h1>Ordinary and Exotic Objects Behaviours</h1>
 
