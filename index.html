@@ -4122,7 +4122,8 @@ h1.version {
           <p>The Link concrete method of a <emu-xref href="#cyclic-module-record" id="_ref_42"><a href="#cyclic-module-record">Cyclic Module Record</a></emu-xref> <var>module</var> takes no arguments and returns either a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">normal completion containing</a></emu-xref> <emu-const>unused</emu-const> or a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">throw completion</a></emu-xref>. On success, Link transitions this module's <var class="field">[[Status]]</var> from <emu-const>unlinked</emu-const> to <emu-const>linked</emu-const>. On failure, an exception is thrown and this module's <var class="field">[[Status]]</var> remains <emu-const>unlinked</emu-const>. (Most of the work is done by the auxiliary function <emu-xref aoid="InnerModuleLinking" id="_ref_43"><a href="#sec-InnerModuleLinking">InnerModuleLinking</a></emu-xref>.)</p>
 
           <emu-note type="editor"><span class="note">Editor's Note</span><div class="note-contents">
-            TODO: Either we add an <var>importedNames</var> parameter, or dynamic import will have to be responsible for linking all the defrred reexports.
+            <p>TODO: Either we add an <var>importedNames</var> parameter, or dynamic import will have to be responsible for linking all the defrred reexports.</p>
+            <p>If we add that parameter, we must be careful because the used deferred re-exports of a module should be linked <var>after</var> calling InitializeEnvironment on the module itself.</p>
           </div></emu-note>
 
           <p>It performs the following steps when called:</p>
