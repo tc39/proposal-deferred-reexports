@@ -62,6 +62,118 @@ contributors: Nicolò Ribaudo
   </emu-clause>
 </emu-clause>
 
+<emu-clause id="sec-ecmascript-language-expressions" number="13">
+  <h1>ECMAScript Language: Expressions</h1>
+
+  <emu-clause id="sec-left-hand-side-expressions" number="3">
+    <h1>Left-Hand-Side Expressions</h1>
+
+    <emu-clause id="sec-import-calls" number="10">
+      <h1>Import Calls</h1>
+
+      <emu-clause id="sec-evaluate-import-call" type="abstract operation">
+        <h1>
+          EvaluateImportCall (
+            _arguments_: a Parse Node,
+            _phase_: ~defer~ or ~evaluation~,
+          ): either a normal completion containing a Promise or an abrupt completion
+        </h1>
+        <dl class="header"></dl>
+        <emu-alg>
+          1. Let _referrer_ be GetActiveScriptOrModule().
+          1. If _referrer_ is *null*, set _referrer_ to the current Realm Record.
+          1. Let _specifier_ be ? EvaluateImportCallSpecifier of _arguments_.
+          1. Let _options_ be ? EvaluateImportCallOptions of _arguments_.
+          1. Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).
+          1. Let _specifierString_ be Completion(ToString(_specifier_)).
+          1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
+          1. Let _attributes_ be a new empty List.
+          1. If _options_ is not *undefined*, then
+            1. If _options_ is not an Object, then
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+              1. Return _promiseCapability_.[[Promise]].
+            1. Let _attributesObj_ be Completion(Get(_options_, *"with"*)).
+            1. IfAbruptRejectPromise(_attributesObj_, _promiseCapability_).
+            1. If _attributesObj_ is not *undefined*, then
+              1. If _attributesObj_ is not an Object, then
+                1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+                1. Return _promiseCapability_.[[Promise]].
+              1. Let _entries_ be Completion(EnumerableOwnProperties(_attributesObj_, ~key+value~)).
+              1. IfAbruptRejectPromise(_entries_, _promiseCapability_).
+              1. For each element _entry_ of _entries_, do
+                1. Let _key_ be ! Get(_entry_, *"0"*).
+                1. Let _value_ be ! Get(_entry_, *"1"*).
+                1. If _key_ is a String, then
+                  1. If _value_ is not a String, then
+                    1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+                    1. Return _promiseCapability_.[[Promise]].
+                  1. Append the ImportAttribute Record { [[Key]]: _key_, [[Value]]: _value_ } to _attributes_.
+            1. If AllImportAttributesSupported(_attributes_) is *false*, then
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+              1. Return _promiseCapability_.[[Promise]].
+            1. Sort _attributes_ according to the lexicographic order of their [[Key]] field, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated.
+          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_, [[Phase]]: _phase_ }.
+          1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
+          1. Return _promiseCapability_.[[Promise]].
+        </emu-alg>
+
+        <emu-clause id="sec-ContinueDynamicImport" type="abstract operation">
+          <h1>
+            ContinueDynamicImport (
+              _promiseCapability_: a PromiseCapability Record,
+              _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
+              _phase_: ~defer~ or ~evaluation~,
+            ): ~unused~
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It completes the process of a dynamic import originally started by an <emu-xref href="#sec-import-calls">`import()`</emu-xref> call, resolving or rejecting the promise returned by that call as appropriate.</dd>
+          </dl>
+          <emu-alg>
+            1. If _moduleCompletion_ is an abrupt completion, then
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _moduleCompletion_.[[Value]] &raquo;).
+              1. Return ~unused~.
+            1. Let _module_ be _moduleCompletion_.[[Value]].
+            1. Let _loadPromise_ be _module_.LoadRequestedModules(<ins>~all~</ins>).
+            1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _promiseCapability_ and performs the following steps when called:
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _reason_ &raquo;).
+              1. Return ~unused~.
+            1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, &laquo; &raquo;).
+            1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, _phase_ and _onRejected_ and performs the following steps when called:
+              1. Let _link_ be Completion(_module_.Link(<span style="background:yellow">TODO: ~all~?</span>)).
+              1. If _link_ is an abrupt completion, then
+                1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _link_.[[Value]] &raquo;).
+                1. Return ~unused~.
+              1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_, _phase_, and _promiseCapability_ and performs the following steps when called:
+                1. Let _namespace_ be GetModuleNamespace(_module_, _phase_).
+                1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, &laquo; _namespace_ &raquo;).
+                1. Return ~unused~.
+              1. If _phase_ is ~defer~, then
+                1. Let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).
+                1. If _evaluationList_ is empty, then
+                  1. Perform _fulfilledClosure_().
+                  1. Return ~unused~.
+                1. Let _asyncDepsEvaluationPromises_ be a new empty List.
+                1. For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _asyncDepsEvaluationPromises_.
+                1. Let _iterator_ be CreateListIteratorRecord(_asyncDepsEvaluationPromises_).
+                1. Let _pc_ be ! NewPromiseCapability(%Promise%).
+                1. Let _evaluatePromise_ be ! PerformPromiseAll(_iterator_, %Promise%, _pc_, %Promise.resolve%).
+              1. Else,
+                1. Assert: _phase_ is ~evaluation~.
+                1. Let _evaluatePromise_ be _module_.Evaluate().
+              1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, *""*, 0, &laquo; &raquo;).
+              1. Perform PerformPromiseThen(_evaluatePromise_, _onFulfilled_, _onRejected_).
+              1. Return ~unused~.
+            1. Let _linkAndEvaluate_ be CreateBuiltinFunction(_linkAndEvaluateClosure_, *""*, 0, &laquo; &raquo;).
+            1. Perform PerformPromiseThen(_loadPromise_, _linkAndEvaluate_, _onRejected_).
+            1. Return ~unused~.
+          </emu-alg>
+        </emu-clause>
+      </emu-clause>
+    </emu-clause>
+  </emu-clause>
+</emu-clause>
+
 <emu-clause id="sec-ecmascript-language-scripts-and-modules" number="16">
   <h1>ECMAScript Language: Scripts and Modules</h1>
 
