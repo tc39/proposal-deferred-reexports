@@ -9,6 +9,55 @@ stage: -1
 contributors: Nicolò Ribaudo
 </pre>
 
+<emu-clause id="sec-ordinary-and-exotic-objects-behaviours" number="10">
+  <h1>Ordinary and Exotic Objects Behaviours</h1>
+
+  <emu-clause id="sec-built-in-exotic-object-internal-methods-and-slots" number="4">
+    <h1>Built-in Exotic Object Internal Methods and Slots</h1>
+    <p>This specification defines several kinds of built-in exotic objects. These objects generally behave similar to ordinary objects except for a few specific situations. The following exotic objects use the ordinary object internal methods except where it is explicitly specified otherwise below:</p>
+
+    <emu-clause id="sec-module-namespace-exotic-objects" oldids="sec-module-namespace-objects" number="6">
+      <h1>Module Namespace Exotic Objects</h1>
+      <p>A module namespace exotic object is an exotic object that exposes the bindings exported from an ECMAScript |Module| (See <emu-xref href="#sec-exports"></emu-xref>). There is a one-to-one correspondence between the String-keyed own properties of a module namespace exotic object and the binding names exported by the |Module|. The exported bindings include any bindings that are indirectly exported using `export *` export items. Each String-valued own property key is the StringValue of the corresponding exported binding name. These are the only String-keyed properties of a module namespace exotic object. Each such property has the attributes { [[Writable]]: *true*, [[Enumerable]]: *true*, [[Configurable]]: *false* }. Module namespace exotic objects are not extensible.</p>
+      <p>An object is a <dfn id="module-namespace-exotic-object" variants="module namespace exotic objects">module namespace exotic object</dfn> if its [[GetPrototypeOf]], [[SetPrototypeOf]], [[IsExtensible]], [[PreventExtensions]], [[GetOwnProperty]], [[DefineOwnProperty]], [[HasProperty]], [[Get]], [[Set]], [[Delete]], and [[OwnPropertyKeys]] internal methods use the definitions in this section, and its other essential internal methods use the definitions found in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots"></emu-xref>. These methods are installed by ModuleNamespaceCreate.</p>
+      <p>Module namespace exotic objects have the internal slots defined in <emu-xref href="#table-internal-slots-of-module-namespace-exotic-objects"></emu-xref>.</p>
+
+      <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver" type="internal method" number="8">
+        <h1>
+          [[Get]] (
+            _P_: a property key,
+            _Receiver_: an ECMAScript language value,
+          ): either a normal completion containing an ECMAScript language value or a throw completion
+        </h1>
+        <dl class="header">
+          <dt>for</dt>
+          <dd>a module namespace exotic object _O_</dd>
+        </dl>
+        <emu-alg>
+          1. If IsSymbolLikeNamespaceKey(_P_, _O_), return ! OrdinaryGet(_O_, _P_, _Receiver_).
+          1. Let _exports_ be ? GetModuleExportsList(_O_).
+          1. If _exports_ does not contain _P_, return *undefined*.
+          1. Let _m_ be _O_.[[Module]].
+          1. Let _binding_ be _m_.ResolveExport(_P_).
+          1. <span style="background:yellow">TODO: The line above should also get a list of intermediate modules to evaluate.</span>
+          1. Assert: _binding_ is a ResolvedBinding Record.
+          1. Let _targetModule_ be _binding_.[[Module]].
+          1. Assert: _targetModule_ is not *undefined*.
+          1. If _binding_.[[BindingName]] is ~namespace~, then
+            1. Return GetModuleNamespace(_targetModule_, ~evaluation~).
+            1. NOTE: The phase here is always ~evaluation~ because in `import defer * as x from "..."; export { x }`, _binding_.[[BindingName]] is *"x"* and not ~namespace~.
+          1. Let _targetEnv_ be _targetModule_.[[Environment]].
+          1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
+          1. Return ? _targetEnv_.GetBindingValue(_binding_.[[BindingName]], *true*).
+        </emu-alg>
+        <emu-note>
+          <p>ResolveExport is side-effect free. Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result. An implementation might choose to pre-compute or cache the ResolveExport results for the [[Exports]] of each module namespace exotic object.</p>
+        </emu-note>
+      </emu-clause>
+    </emu-clause>
+  </emu-clause>
+</emu-clause>
+
 <emu-clause id="sec-ecmascript-language-scripts-and-modules" number="16">
   <h1>ECMAScript Language: Scripts and Modules</h1>
 
@@ -710,7 +759,7 @@ contributors: Nicolò Ribaudo
                   1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
                     1. Set _dfsAncestor_.[[PendingAsyncDependencies]] to _dfsAncestor_.[[PendingAsyncDependencies]] + 1.
                     1. Append _dfsAncestor_ to _requiredModule_.[[AsyncParentModules]].
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, (TODO: request).[[ImportedNames]]).
+                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, <span style="background:yellow">(TODO: request)</span>.[[ImportedNames]]).
                   1. Set _index_ to ? EvaluateRequestedModules(_requiredModule_, _dfsAncestor_, _indirectRequests_, _stack_, _index_).
               1. Return _index_.
             </emu-alg>
