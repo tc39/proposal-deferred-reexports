@@ -67,6 +67,213 @@ import { e, a, d } from "./barrel.js";
 ```
 The execution order will be `b.js`, `d.js`, `barrel.js`, `a.js`, `e.js`, `entrypoint.js`.
 
+Always executing `defer-exported` modules after the module that re-exports them allows more consistency across different types of module graphs, compared to an execute-what-needed-in-source-order.
+
+<details>
+  <summary>Comparison examples</summary>
+  All examples import the `./barrel.js` file as defined above.
+
+  <table>
+  <thead>
+  <tr><th>Title</th><th>Modules</th><th>Executing <code>export defer</code> at the end</th><th>Executing <code>export defer</code> interleaved</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+  <td>No deferred bindings imported</td>
+  <td>
+
+  ```javascript
+  // entry.js
+  import { b } from "./barrel.js"
+  ```
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./entry.js`
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./entry.js`
+  </td>
+  </tr>
+  <tr>
+  <td>First deferred binding imported</td>
+  <td>
+
+  ```javascript
+  // entry.js
+  import { a } from "./barrel.js"
+  ```
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./a.js`
+  - `./entry.js`
+  </td>
+  <td>
+
+  - `./a.js`
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./entry.js`
+  </td>
+  </tr>
+  <tr>
+  <td>Middle deferred binding imported</td>
+  <td>
+
+  ```javascript
+  // entry.js
+  import { c } from "./barrel.js"
+  ```
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./c.js`
+  - `./entry.js`
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./c.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./entry.js`
+  </td>
+  </tr>
+  <tr>
+  <td>Two deferred bindings imported</td>
+  <td>
+
+  ```javascript
+  // entry.js
+  import { a, c } from "./barrel.js"
+  ```
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./a.js`
+  - `./c.js`
+  - `./entry.js`
+  </td>
+  <td>
+
+  - `./a.js`
+  - `./b.js`
+  - `./c.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./entry.js`
+  </td>
+  </tr>
+  <tr>
+  <td>Two deferred bindings imported by two different files</td>
+  <td>
+
+  ```javascript
+  // entry.js
+  import "./sub-1.js";
+  import "./sub-2.js";
+  ```
+
+  ```javascript
+  // sub-1.js
+  import { a } from "./barrel.js";
+  ```
+
+  ```javascript
+  // sub-2.js
+  import { c } from "./barrel.js";
+  ```
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./a.js`
+  - `./sub-1.js`
+  - `./c.js`
+  - `./sub-2.js`
+  - `./entry.js`
+  </td>
+  <td>
+
+  - `./a.js`
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./sub-1.js`
+  - `./c.js`
+  - `./sub-2.js`
+  - `./entry.js`
+  </td>
+  </tr>
+  <tr>
+  <td>Two deferred bindings imported by two different files (opposite order)</td>
+  <td>
+
+  ```javascript
+  // entry.js
+  import "./sub-2.js";
+  import "./sub-1.js";
+  ```
+
+  ```javascript
+  // sub-2.js
+  import { c } from "./barrel.js";
+  ```
+
+  ```javascript
+  // sub-1.js
+  import { a } from "./barrel.js";
+  ```
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./c.js`
+  - `./sub-2.js`
+  - `./a.js`
+  - `./sub-1.js`
+  - `./entry.js`
+  </td>
+  <td>
+
+  - `./b.js`
+  - `./c.js`
+  - `./d.js`
+  - `./barrel.js`
+  - `./sub-2.js`
+  - `./a.js`
+  - `./sub-1.js`
+  - `./entry.js`
+  </td>
+  </tr>
+  </tbody>
+  </table>
+</details>
+
+The proposed ordering is also much simpler to polyfill in tools, which can extract the `export defer` declaration from imported files and replace them with `import` statements in the importer module.
+
 ### Integration with `import defer`
 
 The `import defer` proposal established that the `defer` keyword means "only execute this module when I actually need it", when using _namespace_ imports. On module namespace objects, `export defer` would follow similar semantics:
