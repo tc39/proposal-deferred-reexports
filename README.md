@@ -6,7 +6,7 @@ Champion(s): _Nicolò Ribaudo_
 
 Author(s): _Nicolò Ribaudo_
 
-Stage: ?
+Stage: 2
 
 ## Introduction
 
