@@ -301,6 +301,6 @@ export defer { sub } from "./math/sub.js";
 // index2.js
 import defer * as math from "./math2.js"; // Loads everything, executes nothing
 
-math.add; // Executes ./math.js ./math/add.js
+math.add; // Executes ./math2.js ./math/add.js
 math.sub; // Executes ./math/sub.js
 ```
