@@ -259,24 +259,13 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
-                [[DFSIndex]]
-              </td>
-              <td>
-                an integer or ~empty~
-              </td>
-              <td>
-                Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this non-negative number records the point at which the module was first visited during the depth-first traversal of the dependency graph.
-              </td>
-            </tr>
-            <tr>
-              <td>
                 [[DFSAncestorIndex]]
               </td>
               <td>
                 an integer or ~empty~
               </td>
               <td>
-                Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this is either the module's own [[DFSIndex]] or that of an "earlier" module in the same strongly connected component.
+                Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this is either the module's depth-first traversal index or that of an "earlier" module in the same strongly connected component.
               </td>
             </tr>
             <tr>
@@ -320,7 +309,7 @@ contributors: Nicolò Ribaudo
                 a Cyclic Module Record or ~empty~
               </td>
               <td>
-                The first visited module of the cycle, the root DFS ancestor of the strongly connected component. For a module not in a cycle, this would be the module itself. Once Evaluate has completed, a module's [[DFSAncestorIndex]] is the [[DFSIndex]] of its [[CycleRoot]].
+                The first visited module of the cycle, the root DFS ancestor of the strongly connected component. For a module not in a cycle, this would be the module itself. Once Evaluate has completed, a module's [[DFSAncestorIndex]] is the depth-first traversal index of its [[CycleRoot]].
               </td>
             </tr>
             <tr>
@@ -336,13 +325,13 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
-                [[AsyncEvaluation]]
+                [[AsyncEvaluationOrder]]
               </td>
               <td>
-                a Boolean
+                ~unset~, an integer, or ~done~
               </td>
               <td>
-                Whether this module is either itself asynchronous or has an asynchronous dependency. Note: The order in which this field is set is used to order queued executions, see <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.
+                This field is initially set to ~unset~, and remains ~unset~ for fully synchronous modules. For modules that are either themselves asynchronous or have an asynchronous dependency, it is set to an integer that determines the order in which execution of pending modules is queued by <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>. Once the pending module is executed, the field is set to ~done~.
               </td>
             </tr>
             <tr>
@@ -640,7 +629,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>It is used by Link to perform the actual linking process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as a module's [[DFSIndex]] and [[DFSAncestorIndex]] fields, keep track of the depth-first search (DFS) traversal. In particular, [[DFSAncestorIndex]] is used to discover strongly connected components (SCCs), such that all modules in an SCC transition to ~linked~ together.</dd>
+              <dd>It is used by Link to perform the actual linking process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as a module's [[DFSAncestorIndex]] field, keep track of the depth-first search (DFS) traversal. In particular, [[DFSAncestorIndex]] is used to discover strongly connected components (SCCs), such that all modules in an SCC transition to ~linked~ together.</dd>
             </dl>
 
             <emu-alg>
@@ -651,7 +640,7 @@ contributors: Nicolò Ribaudo
                 1. Return _index_.
               1. Assert: _module_.[[Status]] is ~unlinked~.
               1. Set _module_.[[Status]] to ~linking~.
-              1. Set _module_.[[DFSIndex]] to _index_.
+              1. Let _moduleIndex_ be _index_.
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _index_ to _index_ + 1.
               1. Append _module_ to _stack_.
@@ -666,8 +655,8 @@ contributors: Nicolò Ribaudo
                     1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
               1. Perform ? _module_.InitializeEnvironment().
               1. Assert: _module_ occurs exactly once in _stack_.
-              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
-              1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
+              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _moduleIndex_.
+              1. If _module_.[[DFSAncestorIndex]] = _moduleIndex_, then
                 1. Let _done_ be *false*.
                 1. Repeat, while _done_ is *false*,
                   1. Let _requiredModule_ be the last element of _stack_.
@@ -745,8 +734,9 @@ contributors: Nicolò Ribaudo
             1. Else,
               1. Assert: _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
               1. Assert: _module_.[[EvaluationError]] is ~empty~.
-              1. If _module_.[[AsyncEvaluation]] is *false*, then
-                1. Assert: _module_.[[Status]] is ~evaluated~.
+              1. If _module_.[[Status]] is ~evaluated~, then
+                1. NOTE: This implies that evaluation of _module_ completed synchronously.
+                1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
                 1. Perform ! Call(_capability_.[[Resolve]], *undefined*, « *undefined* »).
               1. Assert: _stack_ is empty.
             1. Return _capability_.[[Promise]].
@@ -762,12 +752,12 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>It is used by Evaluate to perform the actual evaluation process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as _module_'s [[DFSIndex]] and [[DFSAncestorIndex]] fields, are used the same way as in InnerModuleLinking.</dd>
+              <dd>It is used by Evaluate to perform the actual evaluation process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as _module_'s [[DFSAncestorIndex]] field, are used the same way as in InnerModuleLinking.</dd>
             </dl>
 
             <emu-alg>
               1. If _module_ is not a Cyclic Module Record, then
-                1. Perform ? EvaluateSync(_module_).
+                1. Perform ? EvaluateModuleSync(_module_).
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
@@ -775,7 +765,7 @@ contributors: Nicolò Ribaudo
               1. If _module_.[[Status]] is ~evaluating~, return _index_.
               1. Assert: _module_.[[Status]] is ~linked~.
               1. Set _module_.[[Status]] to ~evaluating~.
-              1. Set _module_.[[DFSIndex]] to _index_.
+              1. Let _moduleIndex_ be _index_.
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _module_.[[PendingAsyncDependencies]] to 0.
               1. Set _index_ to _index_ + 1.
@@ -802,28 +792,26 @@ contributors: Nicolò Ribaudo
                     1. <del>Set _requiredModule_ to _requiredModule_.[[CycleRoot]].</del>
                     1. <del>Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.</del>
                     1. <del>If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].</del>
-                  1. <del>If _requiredModule_.[[AsyncEvaluation]] is *true*, then</del>
+                  1. <del>If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then</del>
                     1. <del>Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.</del>
                     1. <del>Append _module_ to _requiredModule_.[[AsyncParentModules]].</del>
               1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
-                1. Assert: _module_.[[AsyncEvaluation]] is *false*.
-                1. Set _module_.[[AsyncEvaluation]] to *true*.
-                1. NOTE: The order in which module records have their [[AsyncEvaluation]] fields transition to *true* is significant. (See <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.)
+                1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
+                1. Set _module_.[[AsyncEvaluationOrder]] to IncrementModuleAsyncEvaluationCount().
                 1. If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).
               1. Else,
                 1. Perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
               1. Assert: _module_ occurs exactly once in _stack_.
-              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
-              1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
+              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _moduleIndex_.
+              1. If _module_.[[DFSAncestorIndex]] = _moduleIndex_, then
                 1. Let _done_ be *false*.
                 1. Repeat, while _done_ is *false*,
                   1. Let _requiredModule_ be the last element of _stack_.
                   1. Remove the last element of _stack_.
                   1. Assert: _requiredModule_ is a Cyclic Module Record.
-                  1. If _requiredModule_.[[AsyncEvaluation]] is *false*, then
-                    1. Set _requiredModule_.[[Status]] to ~evaluated~.
-                  1. Else,
-                    1. Set _requiredModule_.[[Status]] to ~evaluating-async~.
+                  1. Assert: _requiredModule_.[[AsyncEvaluationOrder]] is either an integer or ~unset~.
+                  1. If _requiredModule_.[[AsyncEvaluationOrder]] is ~unset~, set _requiredModule_.[[Status]] to ~evaluated~.
+                  1. Otherwise, set _requiredModule_.[[Status]] to ~evaluating-async~.
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
                   1. Set _requiredModule_.[[CycleRoot]] to _module_.
               1. Return _index_.
@@ -872,7 +860,7 @@ contributors: Nicolò Ribaudo
                     1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
                     1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
                     1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
-                  1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
+                  1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
                     1. Set _dfsAncestor_.[[PendingAsyncDependencies]] to _dfsAncestor_.[[PendingAsyncDependencies]] + 1.
                     1. Append _dfsAncestor_ to _requiredModule_.[[AsyncParentModules]].
                   1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, <span style="background:yellow">(TODO: request)</span>.[[ImportedNames]]).
@@ -964,7 +952,7 @@ contributors: Nicolò Ribaudo
                 1. Append _ee_ to _indirectExportEntries_.
             1. <ins>Let _optionalIndirectExportsEntries_ be OptionalIndirectExportEntries of _body_.</ins>
             1. Let _async_ be _body_ Contains `await`.
-            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_,</ins> [[DFSIndex]]: ~empty~, [[DFSAncestorIndex]]: ~empty~ }.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_,</ins> [[DFSAncestorIndex]]: ~empty~ }.
           </emu-alg>
         </emu-clause>
       </emu-clause>
