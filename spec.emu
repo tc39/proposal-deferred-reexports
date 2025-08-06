@@ -1093,6 +1093,119 @@ contributors: Nicolò Ribaudo
             1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_,</ins> [[DFSAncestorIndex]]: ~empty~ }.
           </emu-alg>
         </emu-clause>
+
+        <emu-clause id="sec-source-text-module-record-module-record-methods">
+          <h1>Implementation of Module Record Abstract Methods</h1>
+
+          <p>The following are the concrete methods for Source Text Module Record that implement the corresponding Module Record abstract methods defined in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref>.</p>
+
+          <emu-clause id="sec-getexportednames" type="concrete method">
+            <h1>
+              GetExportedNames (
+                optional _exportStarSet_: a List of Source Text Module Records,
+              ): a List of Strings
+            </h1>
+            <dl class="header">
+              <dt>for</dt>
+              <dd>a Source Text Module Record _module_</dd>
+            </dl>
+            <emu-alg>
+              1. Assert: _module_.[[Status]] is not ~new~.
+              1. If _exportStarSet_ is not present, set _exportStarSet_ to a new empty List.
+              1. If _exportStarSet_ contains _module_, then
+                1. Assert: We've reached the starting point of an `export *` circularity.
+                1. Return a new empty List.
+              1. Append _module_ to _exportStarSet_.
+              1. Let _exportedNames_ be a new empty List.
+              1. <ins>Let _allNamedExportEntries_ be the list-concatenation of _module_.[[LocalExportEntries]], _module_.[[IndirectExportEntries]], and _module_.[[OptionalIndirectExportEntries]].</ins>
+              1. For each ExportEntry Record _e_ of <del>_module_.[[LocalExportEntries]]</del><ins>_allNamedExportEntries_</ins>, do
+                1. <del>Assert: _module_ provides the direct binding for this export.</del>
+                1. Assert: _e_.[[ExportName]] is not *null*.
+                1. Append _e_.[[ExportName]] to _exportedNames_.
+              1. <del>For each ExportEntry Record _e_ of _module_.[[IndirectExportEntries]], do</del>
+                1. <del>Assert: _module_ imports a specific binding for this export.</del>
+                1. <del>Assert: _e_.[[ExportName]] is not *null*.</del>
+                1. <del>Append _e_.[[ExportName]] to _exportedNames_.</del>
+              1. For each ExportEntry Record _e_ of _module_.[[StarExportEntries]], do
+                1. Assert: _e_.[[ModuleRequest]] is not *null*.
+                1. Let _requestedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
+                1. Let _starNames_ be _requestedModule_.GetExportedNames(_exportStarSet_).
+                1. For each element _n_ of _starNames_, do
+                  1. If _n_ is not *"default"*, then
+                    1. If _exportedNames_ does not contain _n_, then
+                      1. Append _n_ to _exportedNames_.
+              1. Return _exportedNames_.
+            </emu-alg>
+            <emu-note>
+              <p>GetExportedNames does not filter out or throw an exception for names that have ambiguous star export bindings.</p>
+            </emu-note>
+          </emu-clause>
+
+          <emu-clause id="sec-resolveexport" type="concrete method">
+            <h1>
+              ResolveExport (
+                _exportName_: a String,
+                optional _resolveSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),
+              ): a ResolvedBinding Record, *null*, or ~ambiguous~
+            </h1>
+            <dl class="header">
+              <dt>for</dt>
+              <dd>a Source Text Module Record _module_</dd>
+
+              <dt>description</dt>
+              <dd>
+                <p>ResolveExport attempts to resolve an imported binding to the actual defining module and local binding name. The defining module may be the module represented by the Module Record this method was invoked on or some other module that is imported by that module. The parameter _resolveSet_ is used to detect unresolved circular import/export paths. If a pair consisting of specific Module Record and _exportName_ is reached that is already in _resolveSet_, an import circularity has been encountered. Before recursively calling ResolveExport, a pair consisting of _module_ and _exportName_ is added to _resolveSet_.</p>
+                <p>If a defining module is found, a ResolvedBinding Record { [[Module]], [[BindingName]] } is returned. This record identifies the resolved binding of the originally requested export, unless this is the export of a namespace with no local binding. In this case, [[BindingName]] will be set to ~namespace~. If no definition was found or the request is found to be circular, *null* is returned. If the request is found to be ambiguous, ~ambiguous~ is returned.</p>
+              </dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _module_.[[Status]] is not ~new~.
+              1. If _resolveSet_ is not present, set _resolveSet_ to a new empty List.
+              1. For each Record { [[Module]], [[ExportName]] } _r_ of _resolveSet_, do
+                1. If _module_ and _r_.[[Module]] are the same Module Record and _exportName_ is _r_.[[ExportName]], then
+                  1. Assert: This is a circular import request.
+                  1. Return *null*.
+              1. Append the Record { [[Module]]: _module_, [[ExportName]]: _exportName_ } to _resolveSet_.
+              1. For each ExportEntry Record _e_ of _module_.[[LocalExportEntries]], do
+                1. If _e_.[[ExportName]] is _exportName_, then
+                  1. Assert: _module_ provides the direct binding for this export.
+                  1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]] }.
+              1. <ins>Let _allIndirectEntries_ be the list-concatenation of _module_.[[IndirectExportEntries]] and _module_.[[OptionalIndirectExportEntries]].</ins>
+              1. For each ExportEntry Record _e_ of <del>_module_.[[IndirectExportEntries]]</del><ins>_allIndirectEntries_</ins>, do
+                1. If _e_.[[ExportName]] is _exportName_, then
+                  1. Assert: _e_.[[ModuleRequest]] is not *null*.
+                  1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
+                  1. If _e_.[[ImportName]] is ~all~, then
+                    1. Assert: _module_ does not provide the direct binding for this export.
+                    1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
+                  1. Else,
+                    1. Assert: _module_ imports a specific binding for this export.
+                    1. Assert: _e_.[[ImportName]] is a String.
+                    1. Return _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).
+              1. If _exportName_ is *"default"*, then
+                1. Assert: A `default` export was not explicitly defined by this module.
+                1. Return *null*.
+                1. NOTE: A `default` export cannot be provided by an `export * from "mod"` declaration.
+              1. Let _starResolution_ be *null*.
+              1. For each ExportEntry Record _e_ of _module_.[[StarExportEntries]], do
+                1. Assert: _e_.[[ModuleRequest]] is not *null*.
+                1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
+                1. Let _resolution_ be _importedModule_.ResolveExport(_exportName_, _resolveSet_).
+                1. If _resolution_ is ~ambiguous~, return ~ambiguous~.
+                1. If _resolution_ is not *null*, then
+                  1. Assert: _resolution_ is a ResolvedBinding Record.
+                  1. If _starResolution_ is *null*, then
+                    1. Set _starResolution_ to _resolution_.
+                  1. Else,
+                    1. Assert: There is more than one `*` import that includes the requested name.
+                    1. If _resolution_.[[Module]] and _starResolution_.[[Module]] are not the same Module Record, return ~ambiguous~.
+                    1. If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]] and either _resolution_.[[BindingName]] or _starResolution_.[[BindingName]] is ~namespace~, return ~ambiguous~.
+                    1. If _resolution_.[[BindingName]] is a String, _starResolution_.[[BindingName]] is a String, and _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
+              1. Return _starResolution_.
+            </emu-alg>
+          </emu-clause>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="11">
@@ -1339,10 +1452,14 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` <ins>`defer`?</ins> ExportFromClause FromClause WithClause? `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be the sole element of ModuleRequests of |FromClause|.
           1. Return ExportEntriesForModule of |ExportFromClause| with argument _module_.
+        </emu-alg>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>Return a new empty List.</ins>
         </emu-alg>
         <emu-grammar>ExportDeclaration : `export` NamedExports `;`</emu-grammar>
         <emu-alg>
