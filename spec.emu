@@ -782,15 +782,16 @@ contributors: Nicolò Ribaudo
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _index_ to _index_ + 1.
               1. Append _module_ to _stack_.
-              1. <ins>Set _index_ to ? LinkRequestedModules(_module_, _module_, _module_.[[RequestedModules]], _stack_, _index_).</ins>
               1. <del>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</del>
                 1. <del>Let _requiredModule_ be GetImportedModule(_module_, _request_).</del>
-                1. <del>Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).</del>
-                1. <del>If _requiredModule_ is a Cyclic Module Record, then</del>
-                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.</del>
-                  1. <del>Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.</del>
-                  1. <del>If _requiredModule_.[[Status]] is ~linking~, then</del>
-                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
+              1. <ins>Let _linkingList_ be BuildLinkingList(_module_, _module_.[[RequestedModules]]).</ins>
+              1. <ins>For each Module Record _requiredModule_ of _linkingList_, do</ins>
+                1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
+                1. If _requiredModule_ is a Cyclic Module Record, then
+                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
+                  1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
+                  1. If _requiredModule_.[[Status]] is ~linking~, then
+                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
               1. Perform ? _module_.InitializeEnvironment().
               1. Assert: _module_ occurs exactly once in _stack_.
               1. Assert: _module_.[[DFSAncestorIndex]] ≤ _moduleIndex_.
@@ -806,31 +807,26 @@ contributors: Nicolò Ribaudo
             </emu-alg>
           </emu-clause>
 
-          <emu-clause id="sec-LinkRequestedModules" type="abstract operation">
+          <emu-clause id="sec-BuildLinkingList" type="abstract operation">
             <h1>
               <ins>
-                LinkRequestedModules (
+                BuildLinkingList (
                   _referrer_: a Cyclic Module Record,
-                  _dfsAncestor_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
-                  _stack_: a List of Cyclic Module Records,
-                  _index_: a non-negative integer,
-                ): either a normal completion containing a non-negative integer or a throw completion
+                ): a list of Module Records
               </ins>
             </h1>
             <dl class="header"></dl>
+
             <emu-alg>
+              1. Let _linkingList_ be a new empty List.
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                 1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
-                1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
+                1. If _linkingList_ does not contain _requiredModule_, append _requiredModule_ to _linkingList_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
-                  1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
-                  1. If _requiredModule_.[[Status]] is ~linking~, then
-                    1. Set _dfsAncestor_.[[DFSAncestorIndex]] to min(_dfsAncestor_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
                   1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
-                  1. Set _index_ to ? LinkRequestedModules(_requiredModule_, _dfsAncestor_, _indirectRequests_, _stack_, _index_).
-              1. Return _index_.
+                  1. Perform ListAppendUnique(_linkingList_, BuildLinkingList(_requiredModule_, _indirectRequests_)).
+              1. Return _linkingList_.
             </emu-alg>
 
             <emu-note type="editor">
@@ -848,8 +844,6 @@ contributors: Nicolò Ribaudo
             <dt>description</dt>
             <dd>Evaluate transitions this module's [[Status]] from ~linked~ to either ~evaluating-async~ or ~evaluated~. The first time it is called on a module in a given strongly connected component, Evaluate creates and returns a Promise which resolves when the module has finished evaluating. This Promise is stored in the [[TopLevelCapability]] field of the [[CycleRoot]] for the component. Future invocations of Evaluate on any module in the component return the same Promise. (Most of the work is done by the auxiliary function InnerModuleEvaluation.)</dd>
           </dl>
-
-          <emu-note type="editor">TODO: This needs to be updated</emu-note>
 
           <emu-alg>
             1. Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~.
@@ -917,22 +911,22 @@ contributors: Nicolò Ribaudo
                       1. <del>Append _additionalModule_ to _evaluationList_.</del>
                 1. <del>Else if _evaluationList_ does not contain _requiredModule_, then</del>
                   1. <del>Append _requiredModule_ to _evaluationList_.</del>
+              1. <ins>Let _evaluationList_ be BuildEvaluationList(_module_, _module_.[[RequestedModules]]).</ins>
               1. Append _module_ to _stack_.
-              1. <ins>Set _index_ to ? EvaluateRequestedModules(_module_, _module_, _module_.[[RequestedModules]], _stack_, _index_).</ins>
-              1. <del>For each Module Record _requiredModule_ of _evaluationList_, do</del>
-                1. <del>Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).</del>
-                1. <del>If _requiredModule_ is a Cyclic Module Record, then</del>
-                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.</del>
-                  1. <del>Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.</del>
-                  1. <del>If _requiredModule_.[[Status]] is ~evaluating~, then</del>
-                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
-                  1. <del>Else,</del>
-                    1. <del>Set _requiredModule_ to _requiredModule_.[[CycleRoot]].</del>
-                    1. <del>Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.</del>
-                    1. <del>If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].</del>
-                  1. <del>If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then</del>
-                    1. <del>Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.</del>
-                    1. <del>Append _module_ to _requiredModule_.[[AsyncParentModules]].</del>
+              1. For each Module Record _requiredModule_ of _evaluationList_, do
+                1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
+                1. If _requiredModule_ is a Cyclic Module Record, then
+                  1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
+                  1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
+                  1. If _requiredModule_.[[Status]] is ~evaluating~, then
+                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+                  1. Else,
+                    1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
+                    1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+                    1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
+                  1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
+                    1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
+                    1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
               1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
                 1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
                 1. Set _module_.[[AsyncEvaluationOrder]] to IncrementModuleAsyncEvaluationCount().
@@ -962,16 +956,13 @@ contributors: Nicolò Ribaudo
             </emu-note>
           </emu-clause>
 
-          <emu-clause id="sec-EvaluateRequestedModules" type="abstract operation">
+          <emu-clause id="sec-BuildEvaluationList" type="abstract operation">
             <h1>
               <ins>
-                EvaluateRequestedModules (
+                BuildEvaluationList (
                   _referrer_: a Cyclic Module Record,
-                  _dfsAncestor_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
-                  _stack_: a List of Cyclic Module Records,
-                  _index_: a non-negative integer,
-                ): either a normal completion containing a non-negative integer or a throw completion
+                ): a list of Module Records
               </ins>
             </h1>
             <dl class="header"></dl>
@@ -981,34 +972,35 @@ contributors: Nicolò Ribaudo
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                 1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_.[[Specifier]]).
                 1. If _request_.[[Phase]] is ~defer~, then
-                  1. Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_).
-                  1. For each Module Record _additionalModule_ of _additionalModules_, do
-                    1. If _evaluationList_ does not contain _additionalModule_, then
-                      1. Append _additionalModule_ to _evaluationList_.
+                  1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_)).
                 1. Else if _evaluationList_ does not contain _requiredModule_, then
                   1. Append _requiredModule_ to _evaluationList_.
-              1. For each Module Record _requiredModule_ of _evaluationList_, do
-                1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
-                  1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
-                  1. If _requiredModule_.[[Status]] is ~evaluating~, then
-                    1. Set _dfsAncestor_.[[DFSAncestorIndex]] to min(_dfsAncestor_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
-                  1. Else,
-                    1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
-                    1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
-                    1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
-                  1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
-                    1. Set _dfsAncestor_.[[PendingAsyncDependencies]] to _dfsAncestor_.[[PendingAsyncDependencies]] + 1.
-                    1. Append _dfsAncestor_ to _requiredModule_.[[AsyncParentModules]].
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, <span style="background:yellow">(TODO: request)</span>.[[ImportedNames]]).
-                  1. Set _index_ to ? EvaluateRequestedModules(_requiredModule_, _dfsAncestor_, _indirectRequests_, _stack_, _index_).
-              1. Return _index_.
+                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
+                  1. Perform ListAppendUnique(_evaluationList_, BuildEvaluationList(_requiredModule_, _indirectRequests_)).
+              1. Return _evaluationList_.
             </emu-alg>
 
             <emu-note type="editor">
               TODO: There is an infinite loop if two modules `export defer` from each other.
             </emu-note>
+
+            <emu-clause id="sec-ListAppendUnique" type="abstract operation">
+              <h1>
+                <ins>
+                  ListAppendUnique (
+                    _list1_: a List of Records,
+                    _list2_: a List of Records,
+                  ): ~unused~
+                </ins>
+              </h1>
+              <dl class="header"></dl>
+              <emu-alg>
+                1. For each Record _r_ of _list2_, do
+                  1. If _list1_ does not contain _r_, append _r_ to _list1_.
+                1. Return ~unused~.
+              </emu-alg>
+            </emu-clause>
           </emu-clause>
 
           <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
@@ -1041,36 +1033,32 @@ contributors: Nicolò Ribaudo
               1. <del>Return _result_.</del>
               1. <ins>Return InnerGatherAsynchronousTransitiveDependencies(_module_, _module_.[[RequestedModules]], _seen_).</ins>
             </emu-alg>
-          </emu-clause>
 
-          <emu-clause id="sec-InnerGatherAsynchronousTransitiveDependencies" type="abstract operation">
-            <h1>
-              <ins>
-                InnerGatherAsynchronousTransitiveDependencies (
-                  _referrer_: a Cyclic Module Record,
-                  _moduleRequests_: a List of ModuleRequest Records,
-                  _seen_: a List of Module Records
-                ): a List of Module Records
-              </ins>
-            </h1>
-            <dl class="header">
-              <dt>description</dt>
-              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
-            </dl>
+            <emu-clause id="sec-InnerGatherAsynchronousTransitiveDependencies" type="abstract operation">
+              <h1>
+                <ins>
+                  InnerGatherAsynchronousTransitiveDependencies (
+                    _referrer_: a Cyclic Module Record,
+                    _moduleRequests_: a List of ModuleRequest Records,
+                    _seen_: a List of Module Records
+                  ): a List of Module Records
+                </ins>
+              </h1>
+              <dl class="header">
+                <dt>description</dt>
+                <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
+              </dl>
 
-            <emu-alg>
-              1. Let _result_ be a new empty List.
-              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
-                1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
-                1. Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_).
-                1. For each Module Record _m_ of _additionalModules_, do
-                  1. If _result_ does not contain _m_, append _m_ to _result_.
-                1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
-                1. Set _additionalModules_ to InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _indirectRequests_, _seen_).
-                1. For each Module Record _m_ of _additionalModules_, do
-                  1. If _result_ does not contain _m_, append _m_ to _result_.
-              1. Return _result_.
-            </emu-alg>
+              <emu-alg>
+                1. Let _result_ be a new empty List.
+                1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                  1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
+                  1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_)).
+                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
+                  1. Perform ListAppendUnique(_result_, InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _indirectRequests_, _seen_)).
+                1. Return _result_.
+              </emu-alg>
+            </emu-clause>
           </emu-clause>
         </emu-clause>
       </emu-clause>
