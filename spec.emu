@@ -957,6 +957,33 @@ contributors: Nicolò Ribaudo
         </emu-clause>
       </emu-clause>
 
+      <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="11">
+        <h1>
+          FinishLoadingImportedModule (
+            _referrer_: a Script Record, a Cyclic Module Record, or a Realm Record,
+            _moduleRequest_: a ModuleRequest Record,
+            _payload_: a GraphLoadingState Record or a PromiseCapability Record,
+            _result_: either a normal completion containing a Module Record or a throw completion,
+          ): ~unused~
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+        <emu-alg>
+          1. If _result_ is a normal completion, then
+            1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _moduleRequest_) is *true*, then
+              1. Assert: _record_.[[Module]] and _result_.[[Value]] are the same Module Record.
+            1. Else,
+              1. Append the LoadedModuleRequest Record { [[Specifier]]: _moduleRequest_.[[Specifier]], [[Attributes]]: _moduleRequest_.[[Attributes]], [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
+          1. If _payload_ is a GraphLoadingState Record, then
+            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>_moduleRequest_.[[ImportedNames]]</ins>).
+          1. Else,
+            1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]]).
+          1. Return ~unused~.
+        </emu-alg>
+      </emu-clause>
+
       <emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="abstract operation" number="100">
         <h1>
           <ins>
