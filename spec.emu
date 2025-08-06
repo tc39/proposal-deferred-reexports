@@ -204,15 +204,164 @@ contributors: Nicolò Ribaudo
     <emu-clause id="sec-module-semantics">
       <h1>Module Semantics</h1>
 
-      <emu-clause id="sec-static-semantics-modulerequests" oldids="sec-module-semantics-static-semantics-modulerequests,sec-imports-static-semantics-modulerequests,sec-exports-static-semantics-modulerequests" type="sdo" number="4">
+      <emu-clause id="sec-modulerequest-record">
+        <h1>ModuleRequest Records</h1>
+
+        <p>A <dfn id="modulerequest-record" variants="ModuleRequest Records">ModuleRequest Record</dfn> represents the request to import a module with given import attributes and import phase. It consists of the following fields:</p>
+        <emu-table id="table-modulerequest-fields" caption="ModuleRequest Record Fields">
+          <table>
+            <tr>
+              <th>
+                Field Name
+              </th>
+              <th>
+                Value Type
+              </th>
+              <th>
+                Meaning
+              </th>
+            </tr>
+            <tr>
+              <td>
+                [[Specifier]]
+              </td>
+              <td>
+                a String
+              </td>
+              <td>
+                The module specifier
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[Attributes]]
+              </td>
+              <td>
+                a List of ImportAttribute Records
+              </td>
+              <td>
+                The import attributes
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[Phase]]
+              </td>
+              <td>
+                ~defer~ or ~evaluation~
+              </td>
+              <td>
+                The target import phase
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <ins>[[ImportedNames]]</ins>
+              </td>
+              <td>
+                <ins>~all~ or a List of Strings</ins>
+              </td>
+              <td>
+                <ins>The list of names imported from the requested module, used for filtering `export defer` declarations.</ins>
+              </td>
+            </tr>
+          </table>
+        </emu-table>
+      </emu-clause>
+
+      <emu-clause id="sec-static-semantics-modulerequests" type="sdo" number="3">
         <h1>Static Semantics: ModuleRequests ( ): a List of ModuleRequest Records</h1>
         <dl class="header">
         </dl>
+        <emu-grammar>Module : [empty]</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ModuleItemList : ModuleItem</emu-grammar>
+        <emu-alg>
+          1. Return ModuleRequests of |ModuleItem|.
+        </emu-alg>
+        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+        <emu-alg>
+          1. Let _requests_ be the ModuleRequests of |ModuleItemList|.
+          1. Let _additionalRequests_ be the ModuleRequests of |ModuleItem|.
+          1. For each ModuleRequest Record _mr_ of _additionalRequests_, do
+            1. <ins>Let _existingRequest_ be ~empty~.</ins>
+            1. <ins>For each ModuleRequests Record _mr2_ of _additionalRequests_, do</ins>
+              1. <ins>If ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
+                1. <ins>Assert: _existingRequest_ is ~empty~.</ins>
+                1. <ins>Set _existingRequest_ to _mr2_.</ins>
+            1. <del>If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</del>
+            1. <ins>If _existingRequest_ is ~empty~, then</ins>
+              1. Append _mr_ to _requests_.
+            1. <ins>Else,</ins>
+              1. <ins>Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _mr_.[[ImportedNames]]).</ins>
+          1. Return _requests_.
+        </emu-alg>
+        <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>
+          ImportDeclaration : `import` ImportClause FromClause `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |FromClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.
+        </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause `;`</emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |FromClause|.
+          1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~ }.
+        </emu-alg>
+        <emu-grammar>
+          ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be SV of |FromClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~ }.
+        </emu-alg>
+        <emu-grammar>
+          ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be SV of |FromClause|.
+          1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~defer~ }.
+        </emu-alg>
+        <emu-grammar>
+          ExportDeclaration : `export` ExportFromClause FromClause `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be SV of |FromClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.
+        </emu-alg>
+        <emu-grammar>
+          ExportDeclaration : `export` ExportFromClause FromClause WithClause `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |FromClause|.
+          1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~ }.
+        </emu-alg>
         <emu-grammar>
           <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</ins>
         </emu-grammar>
         <emu-alg>
           1. <ins>Return a new empty List.</ins>
+        </emu-alg>
+        <emu-grammar>
+          ExportDeclaration :
+            `export` NamedExports `;`
+            `export` VariableStatement
+            `export` Declaration
+            `export` `default` HoistableDeclaration
+            `export` `default` ClassDeclaration
+            `export` `default` AssignmentExpression `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
         </emu-alg>
       </emu-clause>
 
@@ -448,17 +597,6 @@ contributors: Nicolò Ribaudo
               </td>
               <td>
                 It tracks the number of pending HostLoadImportedModule calls.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <ins>[[ContinuationData]]</ins>
-              </td>
-              <td>
-                <ins>a List of Records with fields [[Referrer]] (a Cyclic Module Record), [[Specifier]] (a String), and [[ImportedNames]] (~all~ or a List of Strings)</ins>
-              </td>
-              <td>
-                <ins>It stores data to be used for ContinueModuleLoading calls by FinishLoadingImportedModule.</ins>
               </td>
             </tr>
             <tr>
