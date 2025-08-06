@@ -546,9 +546,9 @@ contributors: Nicolò Ribaudo
                 1. For each ModuleRequest Record _request_ of <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>, do
                   1. If AllImportAttributesSupported(_request_.[[Attributes]]) is *false*, then
                     1. Let _error_ be ThrowCompletion(a newly created *SyntaxError* object).
-                    1. Perform ContinueModuleLoading(_state_, _error_, _request_.[[ImportedNames]]).
+                    1. Perform ContinueModuleLoading(_state_, _error_, <ins>_request_.[[ImportedNames]]</ins>).
                   1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _request_) is *true*, then
-                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], _request_.[[ImportedNames]]).
+                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>_request_.[[ImportedNames]]</ins>).
                   1. Else,
                     1. Perform HostLoadImportedModule(_module_, _request_, _state_.[[HostDefined]], _state_).
                     1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
