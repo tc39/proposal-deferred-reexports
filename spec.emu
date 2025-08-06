@@ -1023,21 +1023,50 @@ contributors: Nicolò Ribaudo
               <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
             </dl>
 
-            <emu-note type="editor">TODO: This needs to be aware of the `export defer` semantics, to know where to recourse</emu-note>
-
             <emu-alg>
               1. If _seen_ is not present, set _seen_ to a new empty List.
-              1. Let _result_ be a new empty List.
-              1. If _seen_ contains _module_, return _result_.
+              1. <del>Let _result_ be a new empty List</del>.
+              1. If _seen_ contains _module_, return <del>_result_</del><ins>a new empty List</ins>.
               1. Append _module_ to _seen_.
-              1. If _module_ is not a Cyclic Module Record, return _result_.
-              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return _result_.
+              1. If _module_ is not a Cyclic Module Record, return <del>_result_</del><ins>a new empty List</ins>.
+              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return <del>_result_</del><ins>a new empty List</ins>.
               1. If _module_.[[HasTLA]] is *true*, then
-                1. Append _module_ to _result_.
-                1. Return _result_.
-              1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
-                1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
+                1. <del>Append _module_ to _result_</del>.
+                1. Return <del>_result_</del><ins>« _module_ »</ins>.
+              1. <del>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</del>
+                1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
+                1. <del>Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_).</del>
+                1. <del>For each Module Record _m_ of _additionalModules_, do</del>
+                  1. <del>If _result_ does not contain _m_, append _m_ to _result_.</del>
+              1. <del>Return _result_.</del>
+              1. <ins>Return InnerGatherAsynchronousTransitiveDependencies(_module_, _module_.[[RequestedModules]], _seen_).</ins>
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-InnerGatherAsynchronousTransitiveDependencies" type="abstract operation">
+            <h1>
+              <ins>
+                InnerGatherAsynchronousTransitiveDependencies (
+                  _referrer_: a Cyclic Module Record,
+                  _moduleRequests_: a List of ModuleRequest Records,
+                  _seen_: a List of Module Records
+                ): a List of Module Records
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
+            </dl>
+
+            <emu-alg>
+              1. Let _result_ be a new empty List.
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
                 1. Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_).
+                1. For each Module Record _m_ of _additionalModules_, do
+                  1. If _result_ does not contain _m_, append _m_ to _result_.
+                1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
+                1. Set _additionalModules_ to InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _indirectRequests_, _seen_).
                 1. For each Module Record _m_ of _additionalModules_, do
                   1. If _result_ does not contain _m_, append _m_ to _result_.
               1. Return _result_.
