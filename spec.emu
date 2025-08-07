@@ -112,7 +112,7 @@ contributors: Nicolò Ribaudo
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
               1. Return _promiseCapability_.[[Promise]].
             1. Sort _attributes_ according to the lexicographic order of their [[Key]] field, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated.
-          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_, [[Phase]]: _phase_ }.
+          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: ~all~</ins> }.
           1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
@@ -307,20 +307,23 @@ contributors: Nicolò Ribaudo
         </emu-grammar>
         <emu-alg>
           1. Let _specifier_ be the SV of |FromClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.
+          1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause `;`</emu-grammar>
         <emu-alg>
           1. Let _specifier_ be the SV of |FromClause|.
           1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~ }.
+          1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`
         </emu-grammar>
         <emu-alg>
           1. Let _specifier_ be SV of |FromClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~ }.
+          1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`
@@ -328,7 +331,8 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _specifier_ be SV of |FromClause|.
           1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~defer~ }.
+          1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
           ExportDeclaration : `export` ExportFromClause FromClause `;`
@@ -1309,29 +1313,171 @@ contributors: Nicolò Ribaudo
           1. Return _requests_.
         </emu-alg>
       </emu-clause>
+    </emu-clause>
 
-      <emu-clause id="sec-mergeimportednames" type="abstract operation">
+    <emu-clause id="sec-imports">
+      <h1>Imports</h1>
+
+      <emu-clause id="sec-static-semantics-importentries" oldids="sec-module-semantics-static-semantics-importentries,sec-imports-static-semantics-importentries" type="sdo" number="2">
+        <h1>Static Semantics: ImportEntries ( ): a List of ImportEntry Records</h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>Module : [empty]</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+        <emu-alg>
+          1. Let _entries1_ be the ImportEntries of |ModuleItemList|.
+          1. Let _entries2_ be the ImportEntries of |ModuleItem|.
+          1. Return the list-concatenation of _entries1_ and _entries2_.
+        </emu-alg>
+        <emu-grammar>
+          ModuleItem :
+            ExportDeclaration
+            StatementListItem
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause? `;`</emu-grammar>
+        <emu-alg>
+          1. Let _module_ be the sole element of the ModuleRequests of |ImportDeclaration|.
+          1. Return the ImportEntriesForModule of |ImportClause| with argument _module_.
+        </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause? `;`</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-static-semantics-importentriesformodule" type="sdo">
+        <h1>
+          Static Semantics: ImportEntriesForModule (
+            _module_: a ModuleRequest Record,
+          ): a List of ImportEntry Records
+        </h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>ImportClause : ImportedDefaultBinding `,` NameSpaceImport</emu-grammar>
+        <emu-alg>
+          1. Let _entries1_ be the ImportEntriesForModule of |ImportedDefaultBinding| with argument _module_.
+          1. Let _entries2_ be the ImportEntriesForModule of |NameSpaceImport| with argument _module_.
+          1. Return the list-concatenation of _entries1_ and _entries2_.
+        </emu-alg>
+        <emu-grammar>ImportClause : ImportedDefaultBinding `,` NamedImports</emu-grammar>
+        <emu-alg>
+          1. Let _entries1_ be the ImportEntriesForModule of |ImportedDefaultBinding| with argument _module_.
+          1. Let _entries2_ be the ImportEntriesForModule of |NamedImports| with argument _module_.
+          1. Return the list-concatenation of _entries1_ and _entries2_.
+        </emu-alg>
+        <emu-grammar>ImportedDefaultBinding : ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Let _localName_ be the sole element of the BoundNames of |ImportedBinding|.
+          1. Let _defaultEntry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: *"default"*, [[LocalName]]: _localName_ }.
+          1. Return « _defaultEntry_ ».
+        </emu-alg>
+        <emu-grammar>NameSpaceImport : `*` `as` ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Let _localName_ be the StringValue of |ImportedBinding|.
+          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~namespace-object~, [[LocalName]]: _localName_ }.
+          1. Return « _entry_ ».
+        </emu-alg>
+        <emu-grammar>NamedImports : `{` `}`</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _specs1_ be the ImportEntriesForModule of |ImportsList| with argument _module_.
+          1. Let _specs2_ be the ImportEntriesForModule of |ImportSpecifier| with argument _module_.
+          1. Return the list-concatenation of _specs1_ and _specs2_.
+        </emu-alg>
+        <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Let _localName_ be the sole element of the BoundNames of |ImportedBinding|.
+          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _localName_, [[LocalName]]: _localName_ }.
+          1. Return « _entry_ ».
+        </emu-alg>
+        <emu-grammar>ImportSpecifier : ModuleExportName `as` ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Let _importName_ be the StringValue of |ModuleExportName|.
+          1. Let _localName_ be the StringValue of |ImportedBinding|.
+          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _importName_, [[LocalName]]: _localName_ }.
+          1. Return « _entry_ ».
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-ImportedNames" type="sdo">
         <h1>
           <ins>
-            MergeImportedNames (
-              _a_: ~all~ or a List of Strings,
-              _b_: ~all~ or a List of Strings,
-            ): ~all~ or a List of Strings
+            Static Semantics: ImportedNames ( ): ~all~ or a List of Strings
           </ins>
         </h1>
         <dl class="header">
-          <dt>description</dt>
-          <dd></dd>
         </dl>
-
+        <emu-grammar>
+          ImportClause :
+            NameSpaceImport
+            ImportedDefaultBinding `,` NameSpaceImport
+        </emu-grammar>
         <emu-alg>
-          1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
-          1. Return the list-concatenation of _a_ and _b_.
+          1. Return ~all~.
         </emu-alg>
+        <emu-grammar>ImportClause : ImportedDefaultBinding `,` NamedImports</emu-grammar>
+        <emu-alg>
+          1. Let _names1_ be ImportedNames of |ImportedDefaultBinding|.
+          1. Let _names2_ be ImportedNames of |NamedImports|.
+          1. Return MergeImportedNames(_names1_, _names2_).
+        </emu-alg>
+        <emu-grammar>ImportedDefaultBinding : ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Return « *"default"* ».
+        </emu-alg>
+        <emu-grammar>NamedImports : `{` `}`</emu-grammar>
+        <emu-alg>
+          1. Return « ».
+        </emu-alg>
+        <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _names1_ be ImportedNames of |ImportsList|.
+          1. Let _names2_ be ImportedNames of |ImportSpecifier|.
+          1. Return MergeImportedNames(_names1_, _names2_).
+        </emu-alg>
+        <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Let _importedName_ be the StringValue of |ImportedBinding|.
+          1. Return « _importedName_ ».
+        </emu-alg>
+        <emu-grammar>ImportSpecifier : ModuleExportName `as` ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Let _importedName_ be the StringValue of |ModuleExportName|.
+          1. Return « _importedName_ ».
+        </emu-alg>
+
+        <emu-clause id="sec-MergeImportedNames" type="abstract operation">
+          <h1>
+            <ins>
+              MergeImportedNames (
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd></dd>
+          </dl>
+
+          <emu-alg>
+            1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
+            1. Return the list-concatenation of _a_ and _b_.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
     </emu-clause>
 
-    <emu-clause id="sec-exports" number="3">
+    <emu-clause id="sec-exports">
       <h1>Exports</h1>
 
       <h2>Syntax</h2>
