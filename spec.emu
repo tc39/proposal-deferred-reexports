@@ -334,16 +334,18 @@ contributors: Nicolò Ribaudo
           ExportDeclaration : `export` ExportFromClause FromClause `;`
         </emu-grammar>
         <emu-alg>
-          1. Let _specifier_ be SV of |FromClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.
+          1. <del>Let _specifier_ be SV of |FromClause|.</del>
+          1. <del>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.</del>
+          1. Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|).
         </emu-alg>
         <emu-grammar>
           ExportDeclaration : `export` ExportFromClause FromClause WithClause `;`
         </emu-grammar>
         <emu-alg>
-          1. Let _specifier_ be the SV of |FromClause|.
-          1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~ }.
+          1. <del>Let _specifier_ be the SV of |FromClause|.</del>
+          1. <del>Let _attributes_ be WithClauseToAttributes of |WithClause|.</del>
+          1. <del>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~ }.</del>
+          1. <ins>Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, |WithClause|).</ins>
         </emu-alg>
         <emu-grammar>
           <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</ins>
@@ -363,6 +365,27 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
+
+        <emu-clause id="sec-ExportFromDeclarationModuleRequest" type="abstract operation">
+          <h1>
+            <ins>
+              ExportFromDeclarationModuleRequest (
+                _exportFromClause_: an |ExportFromClause| Parse Node,
+                _fromClause_: a |FromClause| Parse Node,
+                optional _withClause_: a |WithClause| Parse Node,
+              ): a ModuleRequest Record
+            </ins>
+          </h1>
+          <dl class="header"></dl>
+
+          <emu-alg>
+            1. Let _importedNames_ be ImportedNames of _exportFromClause_.
+            1. Let _specifier_ be the SV of _fromClause_.
+            1. If _withClause_ is present, let _attributes_ be WithClauseToAttributes of _withClause_.
+            1. Else, let _attributes_ be « ».
+            1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~, [[ImportedNames]]: _importedNames_ }.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-cyclic-module-records" number="6">
@@ -1557,7 +1580,9 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
-          1. Return ExportEntries of |ExportDeclaration|.
+          1. If |WithClause| is present, let _request_ be ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, |WithClause|).
+          1. Else, let _request_ be ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|).
+          1. Return ExportEntriesForModule of |ExportFromClause| with argument _request_.
         </emu-alg>
       </emu-clause>
     </emu-clause>
