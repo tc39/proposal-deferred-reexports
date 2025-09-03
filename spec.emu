@@ -43,8 +43,10 @@ contributors: Nicolò Ribaudo
           1. If _exports_ does not contain _P_, return *undefined*.
           1. Let _m_ be _O_.[[Module]].
           1. Let _binding_ be _m_.ResolveExport(_P_).
-          1. <span style="background:yellow">TODO: The line above should also get a list of intermediate modules to evaluate.</span>
           1. Assert: _binding_ is a ResolvedBinding Record.
+          1. <ins>For each Module Record _deferredModule_ of _binding_.[[DeferredModules]], do</ins>
+            1. <ins>If ReadyForSyncExecution(_deferredModule_) is *false*, throw a *TypeError* exception.</ins>
+            1. <ins>Perform ? EvaluateModuleSync(_deferredModule_).</ins>
           1. Let _targetModule_ be _binding_.[[Module]].
           1. Assert: _targetModule_ is not *undefined*.
           1. If _binding_.[[BindingName]] is ~namespace~, then
@@ -388,6 +390,156 @@ contributors: Nicolò Ribaudo
             1. If _withClause_ is present, let _attributes_ be WithClauseToAttributes of _withClause_.
             1. Else, let _attributes_ be « ».
             1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~evaluation~, [[ImportedNames]]: _importedNames_ }.
+          </emu-alg>
+        </emu-clause>
+      </emu-clause>
+
+      <emu-clause id="sec-abstract-module-records" number="5">
+        <h1>Abstract Module Records</h1>
+        <p>A <dfn variants="Module Records">Module Record</dfn> encapsulates structural information about the imports and exports of a single module. This information is used to link the imports and exports of sets of connected modules. A Module Record includes four fields that are only used when evaluating a module.</p>
+        <p>For specification purposes Module Record values are values of the Record specification type and can be thought of as existing in a simple object-oriented hierarchy where Module Record is an abstract class with both abstract and concrete subclasses. This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record. Other specifications and implementations may define additional Module Record subclasses corresponding to alternative module definition facilities that they defined.</p>
+        <p>Module Record defines the fields listed in <emu-xref href="#table-module-record-fields"></emu-xref>. All Module Definition subclasses include at least those fields. Module Record also defines the abstract method list in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref>. All Module definition subclasses must provide concrete implementations of these abstract methods.</p>
+        <emu-table id="table-module-record-fields" caption="Module Record Fields" oldids="table-36">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  Field Name
+                </th>
+                <th>
+                  Value Type
+                </th>
+                <th>
+                  Meaning
+                </th>
+              </tr>
+            </thead>
+            <tr>
+              <td>
+                [[Realm]]
+              </td>
+              <td>
+                a Realm Record
+              </td>
+              <td>
+                The Realm within which this module was created.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[Environment]]
+              </td>
+              <td>
+                a Module Environment Record or ~empty~
+              </td>
+              <td>
+                The Environment Record containing the top level bindings for this module. This field is set when the module is linked.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[Namespace]]
+              </td>
+              <td>
+                an Object or ~empty~
+              </td>
+              <td>
+                The Module Namespace Object (<emu-xref href="#sec-module-namespace-objects"></emu-xref>) if one has been created for this module.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[HostDefined]]
+              </td>
+              <td>
+                anything (default value is *undefined*)
+              </td>
+              <td>
+                Field reserved for use by host environments that need to associate additional information with a module.
+              </td>
+            </tr>
+          </table>
+        </emu-table>
+        <emu-table id="table-abstract-methods-of-module-records" caption="Abstract Methods of Module Records" oldids="table-37">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  Method
+                </th>
+                <th>
+                  Purpose
+                </th>
+              </tr>
+            </thead>
+            <tr>
+              <td>
+                LoadRequestedModules([_hostDefined_])
+              </td>
+              <td>
+                <p>Prepares the module for linking by recursively loading all its dependencies, and returns a promise.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                GetExportedNames([_exportStarSet_])
+              </td>
+              <td>
+                <p>Return a list of all names that are either directly or indirectly exported from this module.</p>
+                <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                ResolveExport(_exportName_ [, _resolveSet_])
+              </td>
+              <td>
+                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModule]] is the list of modules imported through `export defer` that the binding resolution process needs to go through, which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
+                <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Link()
+              </td>
+              <td>
+                <p>Prepare the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>
+                <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                Evaluate()
+              </td>
+              <td>
+                <p>Returns a promise for the evaluation of this module and its dependencies, resolving on successful evaluation or if it has already been evaluated successfully, and rejecting for an evaluation error or if it has already been evaluated unsuccessfully. If the promise is rejected, hosts are expected to handle the promise rejection and rethrow the evaluation error.</p>
+                <p>Link must have completed successfully prior to invoking this method.</p>
+              </td>
+            </tr>
+          </table>
+        </emu-table>
+
+        <emu-clause id="sec-EvaluateModuleSync" type="abstract operation">
+          <h1>
+            EvaluateModuleSync (
+              _module_: a Module Record,
+            ): either a normal completion containing ~unused~ or a throw completion
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It synchronously evaluates _module_, provided that the caller guarantees that _module_'s evaluation will return an already settled promise.</dd>
+          </dl>
+
+          <emu-alg>
+            1. Assert: _module_ is not a Cyclic Module Record.
+            1. Let _promise_ be _module_.Evaluate().
+            1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
+            1. If _promise_.[[PromiseState]] is ~rejected~, then
+              1. If _promise_.[[PromiseIsHandled]] is *false*, perform HostPromiseRejectionTracker(_promise_, *"handle"*).
+              1. Set _promise_.[[PromiseIsHandled]] to *true*.
+              1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
+            1. Return ~unused~.
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -1003,13 +1155,19 @@ contributors: Nicolò Ribaudo
                 1. Else if _evaluationList_ does not contain _requiredModule_, then
                   1. Append _requiredModule_ to _evaluationList_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
+                  1. Let _importedNames_ be _request_.[[ImportedNames]].
+                  1. [id="step-BuildEvaluationList-reset-importedNames"] If _importedNames_ = ~all~, set _importedNames_ to « ».
+                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _importedNames_).
                   1. Perform ListAppendUnique(_evaluationList_, BuildEvaluationList(_requiredModule_, _indirectRequests_)).
               1. Return _evaluationList_.
             </emu-alg>
 
             <emu-note type="editor">
               TODO: There is an infinite loop if two modules `export defer` from each other.
+            </emu-note>
+
+            <emu-note>
+              <p>Step <emu-xref href="#step-BuildEvaluationList-reset-importedNames"></emu-xref> empties _request_.[[ImportedNames]] when it's set to ~all~, so that `import *` does not cause the evaluation of modules loaded through `export defer`. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
             </emu-note>
 
             <emu-clause id="sec-ListAppendUnique" type="abstract operation">
@@ -1214,7 +1372,7 @@ contributors: Nicolò Ribaudo
               1. For each ExportEntry Record _e_ of _module_.[[LocalExportEntries]], do
                 1. If _e_.[[ExportName]] is _exportName_, then
                   1. Assert: _module_ provides the direct binding for this export.
-                  1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]] }.
+                  1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]], <ins>[[DeferredModules]]: « »</ins> }.
               1. <ins>Let _allIndirectEntries_ be the list-concatenation of _module_.[[IndirectExportEntries]] and _module_.[[OptionalIndirectExportEntries]].</ins>
               1. For each ExportEntry Record _e_ of <del>_module_.[[IndirectExportEntries]]</del><ins>_allIndirectEntries_</ins>, do
                 1. If _e_.[[ExportName]] is _exportName_, then
@@ -1222,11 +1380,17 @@ contributors: Nicolò Ribaudo
                   1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
                   1. If _e_.[[ImportName]] is ~all~, then
                     1. Assert: _module_ does not provide the direct binding for this export.
-                    1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
+                    1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~, <ins>[[DeferredModules]]: « »</ins> }.
                   1. Else,
                     1. Assert: _module_ imports a specific binding for this export.
                     1. Assert: _e_.[[ImportName]] is a String.
-                    1. Return _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).
+                    1. <del>Return _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).</del>
+                    1. <ins>Let _resolvedBinding_ be _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).</ins>
+                    1. <ins>If _resolvedBinding_ is a ResolvedBinding Record and _module_.[[OptionalIndirectExportEntries]] contains _e_, then</ins>
+                      1. <ins>Let _deferredModules_ be the list-concatenation of « _importedModule_ » and _resolvedBinding_.[[DeferredModules]].</ins>
+                      1. <span style="background:yellow">TODO: Handle duplicates in the list.</span>
+                      1. <ins>Return ResolvedBinding Record { [[Module]]: _resolvedBinding_.[[Module]], [[BindingName]]: _resolvedBinding_.[[BindingName]], [[DeferredModules]]: _deferredModules_ }.</ins>
+                    1. <ins>Return _resolvedBinding_.</ins>
               1. If _exportName_ is *"default"*, then
                 1. Assert: A `default` export was not explicitly defined by this module.
                 1. Return *null*.
@@ -1246,6 +1410,9 @@ contributors: Nicolò Ribaudo
                     1. If _resolution_.[[Module]] and _starResolution_.[[Module]] are not the same Module Record, return ~ambiguous~.
                     1. If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]] and either _resolution_.[[BindingName]] or _starResolution_.[[BindingName]] is ~namespace~, return ~ambiguous~.
                     1. If _resolution_.[[BindingName]] is a String, _starResolution_.[[BindingName]] is a String, and _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
+                    1. <ins>Let _deferredModules_ be the list-concatenation of _starResolution_.[[DeferredModules]] and _resolution_.[[DeferredModules]].</ins>
+                    1. <span style="background:yellow">TODO: Handle duplicates in the list.</span>
+                    1. <ins>Set _starResolution_ to the ResolvedBinding Record { [[Module]]: _starResolution_.[[Module]], [[BindingName]]: _starResolution_.[[BindingName]], [[DeferredModules]]: _deferredModules_ }.</ins>
               1. Return _starResolution_.
             </emu-alg>
           </emu-clause>
