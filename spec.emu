@@ -1388,7 +1388,6 @@ contributors: Nicolò Ribaudo
                     1. <ins>Let _resolvedBinding_ be _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).</ins>
                     1. <ins>If _resolvedBinding_ is a ResolvedBinding Record and _module_.[[OptionalIndirectExportEntries]] contains _e_, then</ins>
                       1. <ins>Let _deferredModules_ be the list-concatenation of « _importedModule_ » and _resolvedBinding_.[[DeferredModules]].</ins>
-                      1. <span style="background:yellow">TODO: Handle duplicates in the list.</span>
                       1. <ins>Return ResolvedBinding Record { [[Module]]: _resolvedBinding_.[[Module]], [[BindingName]]: _resolvedBinding_.[[BindingName]], [[DeferredModules]]: _deferredModules_ }.</ins>
                     1. <ins>Return _resolvedBinding_.</ins>
               1. If _exportName_ is *"default"*, then
@@ -1411,7 +1410,6 @@ contributors: Nicolò Ribaudo
                     1. If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]] and either _resolution_.[[BindingName]] or _starResolution_.[[BindingName]] is ~namespace~, return ~ambiguous~.
                     1. If _resolution_.[[BindingName]] is a String, _starResolution_.[[BindingName]] is a String, and _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
                     1. <ins>Let _deferredModules_ be the list-concatenation of _starResolution_.[[DeferredModules]] and _resolution_.[[DeferredModules]].</ins>
-                    1. <span style="background:yellow">TODO: Handle duplicates in the list.</span>
                     1. <ins>Set _starResolution_ to the ResolvedBinding Record { [[Module]]: _starResolution_.[[Module]], [[BindingName]]: _starResolution_.[[BindingName]], [[DeferredModules]]: _deferredModules_ }.</ins>
               1. Return _starResolution_.
             </emu-alg>
