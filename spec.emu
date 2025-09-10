@@ -936,7 +936,7 @@ contributors: Nicolò Ribaudo
             1. <ins>For each ModuleRequest Record _request_ of _indirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
-              1. <ins>If _requiredModule_.[[Status]] is ~unlinked~, perform ? _requiredModule_.Link().</ins>
+              1. <ins>If _requiredModule_.[[Status]] is ~unlinked~, perform ? _requiredModule_.Link(_request_.[[ImportedNames]]).</ins>
             1. Return ~unused~.
           </emu-alg>
 
