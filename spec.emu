@@ -783,10 +783,11 @@ contributors: Nicolò Ribaudo
                 [[Visited]]
               </td>
               <td>
-                a List of Cyclic Module Records
+                <del>a List of Cyclic Module Records</del>
+                <ins>a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings)</ins>
               </td>
               <td>
-                It is a list of the Cyclic Module Records that have been already loaded by the current loading process, to avoid infinite loops with circular dependencies.
+                It is a list of the Cyclic Module Records that have been already loaded by the current loading process, <ins>together with the list of bindings that have already been imported from them,</ins> to avoid infinite loops with circular dependencies.
               </td>
             </tr>
             <tr>
@@ -853,10 +854,15 @@ contributors: Nicolò Ribaudo
               1. <del>If _module_ is a Cyclic Module Record, _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then</del>
               1. <ins>If _module_ is a Cyclic Module Record, then</ins>
                 1. <ins>Let _requestsToLoad_ be a new empty List.</ins>
-                1. <ins>If _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then</ins>
-                  1. Append _module_ to _state_.[[Visited]].
-                  1. <ins>Set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
-                1. <ins>Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_module_, _importedNames_).</ins>
+                1. <ins>If _state_.[[Visited]] does not contain a Record whose [[Module]] field is _module_, then</ins>
+                  1. <ins>If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
+                  1. <del>Append _module_ to _state_.[[Visited]].</del>
+                  1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: « » } to _state_.[[Visited]].</ins>
+                1. <ins>Assert: _state_.[[Visited]] contains a Record whose [[Module]] field is _module_.</ins>
+                1. <ins>Let _previous_ be the Record in _state_.[[Visited]] whose [[Module]] field is _module_.</ins>
+                1. <ins>Let _remainingImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).</ins>
+                1. <ins>Set _previous_.[[ImportedNames]] to MergeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).</ins>
+                1. <ins>Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_module_, _remainingImportedNames_).</ins>
                 1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _indirectRequests_.</ins>
                 1. Let _requestedModulesCount_ be the number of elements in <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>.
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
@@ -874,8 +880,8 @@ contributors: Nicolò Ribaudo
               1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] - 1.
               1. If _state_.[[PendingModulesCount]] = 0, then
                 1. Set _state_.[[IsLoading]] to *false*.
-                1. For each Cyclic Module Record _loaded_ of _state_.[[Visited]], do
-                  1. If _loaded_.[[Status]] is ~new~, set _loaded_.[[Status]] to ~unlinked~.
+                1. For each Record _loaded_ of _state_.[[Visited]], do
+                  1. If _loaded_<ins>.[[Module]]</ins>.[[Status]] is ~new~, set _loaded_<ins>.[[Module]]</ins>.[[Status]] to ~unlinked~.
                 1. Perform ! Call(_state_.[[PromiseCapability]].[[Resolve]], *undefined*, « *undefined* »).
               1. Return ~unused~.
             </emu-alg>
@@ -967,7 +973,8 @@ contributors: Nicolò Ribaudo
               1. Append _module_ to _stack_.
               1. <del>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</del>
                 1. <del>Let _requiredModule_ be GetImportedModule(_module_, _request_).</del>
-              1. <ins>Let _linkingList_ be BuildLinkingList(_module_, _module_.[[RequestedModules]]).</ins>
+              1. <ins>Let _linkingList_ be « ».</ins>
+              1. <ins>Perform BuildLinkingList(_linkingList_, _module_, _module_.[[RequestedModules]], « »).</ins>
               1. <ins>For each Module Record _requiredModule_ of _linkingList_, do</ins>
                 1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
                 1. If _requiredModule_ is a Cyclic Module Record, then
@@ -994,27 +1001,32 @@ contributors: Nicolò Ribaudo
             <h1>
               <ins>
                 BuildLinkingList (
+                  _linkingList_: a List of Module Records,
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
-                ): a list of Module Records
+                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
+                ): ~unused~
               </ins>
             </h1>
             <dl class="header"></dl>
 
             <emu-alg>
-              1. Let _linkingList_ be a new empty List.
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                 1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
-                1. If _linkingList_ does not contain _requiredModule_, append _requiredModule_ to _linkingList_.
+                1. If _linkingList_ does not contain _requiredModule_, then
+                  1. Append _requiredModule_ to _linkingList_.
+                  1. If _requiredModule_ is a Cyclic Module Record, then
+                    1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
+                    1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
-                  1. Perform ListAppendUnique(_linkingList_, BuildLinkingList(_requiredModule_, _indirectRequests_)).
-              1. Return _linkingList_.
+                  1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _requiredModule_.
+                  1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _requiredModule_.
+                  1. Let _remainingImportedNames_ be ExcludeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
+                  1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
+                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _remainingImportedNames_).
+                  1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _indirectRequests_, _previouslyImportedNames_).
+              1. Return ~unused~.
             </emu-alg>
-
-            <emu-note type="editor">
-              TODO: There is an infinite loop if two modules `export defer` from each other.
-            </emu-note>
           </emu-clause>
         </emu-clause>
 
@@ -1094,7 +1106,8 @@ contributors: Nicolò Ribaudo
                       1. <del>Append _additionalModule_ to _evaluationList_.</del>
                 1. <del>Else if _evaluationList_ does not contain _requiredModule_, then</del>
                   1. <del>Append _requiredModule_ to _evaluationList_.</del>
-              1. <ins>Let _evaluationList_ be BuildEvaluationList(_module_, _module_.[[RequestedModules]]).</ins>
+              1. <ins>Let _evaluationList_ be « ».</ins>
+              1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _module_.[[RequestedModules]]).</ins>
               1. Append _module_ to _stack_.
               1. For each Module Record _requiredModule_ of _evaluationList_, do
                 1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
@@ -1143,15 +1156,15 @@ contributors: Nicolò Ribaudo
             <h1>
               <ins>
                 BuildEvaluationList (
+                  _evaluationList_: a list of Module Records,
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
-                ): a list of Module Records
+                ): ~unused~
               </ins>
             </h1>
             <dl class="header"></dl>
 
             <emu-alg>
-              1. Let _evaluationList_ be a new empty List.
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                 1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_.[[Specifier]]).
                 1. If _request_.[[Phase]] is ~defer~, then
@@ -1162,16 +1175,16 @@ contributors: Nicolò Ribaudo
                   1. Let _importedNames_ be _request_.[[ImportedNames]].
                   1. [id="step-BuildEvaluationList-reset-importedNames"] If _importedNames_ = ~all~, set _importedNames_ to « ».
                   1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _importedNames_).
-                  1. Perform ListAppendUnique(_evaluationList_, BuildEvaluationList(_requiredModule_, _indirectRequests_)).
-              1. Return _evaluationList_.
+                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _indirectRequests_).
+              1. Return ~unused~.
             </emu-alg>
-
-            <emu-note type="editor">
-              TODO: There is an infinite loop if two modules `export defer` from each other.
-            </emu-note>
 
             <emu-note>
               <p>Step <emu-xref href="#step-BuildEvaluationList-reset-importedNames"></emu-xref> empties _request_.[[ImportedNames]] when it's set to ~all~, so that `import *` does not cause the evaluation of modules loaded through `export defer`. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
+            </emu-note>
+
+            <emu-note>
+              <p>Unlike BuildLinkingList, this operation does not need to keep track of which names have already been imported from a given module. Module graphs where two modules have a recursive `export defer` between each other that would cause an infinite loop already fail when linking.</p>
             </emu-note>
 
             <emu-clause id="sec-ListAppendUnique" type="abstract operation">
@@ -1641,6 +1654,28 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
             1. Return the list-concatenation of _a_ and _b_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-ExcludeImportedNames" type="abstract operation">
+          <h1>
+            <ins>
+              ExcludeImportedNames (
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It returns the minimal set of imported names that is guaranteed to include all the names present in _a_ but not in _b_.</dd>
+          </dl>
+
+          <emu-alg>
+            1. If _b_ is ~all~, return « ».
+            1. If _a_ is ~all~, return ~all~.
+            1. Assert: _a_ and _b_ are Lists of Strings.
+            1. Return a new List containing all the elements of _a_ that are not also elements of _b_.
           </emu-alg>
         </emu-clause>
       </emu-clause>
