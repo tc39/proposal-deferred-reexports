@@ -869,9 +869,9 @@ contributors: Nicolò Ribaudo
                 1. For each ModuleRequest Record _request_ of <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>, do
                   1. If AllImportAttributesSupported(_request_.[[Attributes]]) is *false*, then
                     1. Let _error_ be ThrowCompletion(a newly created *SyntaxError* object).
-                    1. Perform ContinueModuleLoading(_state_, _error_, <ins>_request_.[[ImportedNames]]</ins>).
+                    1. Perform ContinueModuleLoading(_state_, _error_, <ins>ExcludeUnrequestedReexportedImportedNames(_request_.[[ImportedNames]], _importedNames_)</ins>).
                   1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _request_) is *true*, then
-                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>_request_.[[ImportedNames]]</ins>).
+                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>ExcludeUnrequestedReexportedImportedNames(_request_.[[ImportedNames]], _importedNames_)</ins>).
                   1. Else,
                     1. Perform HostLoadImportedModule(_module_, _request_, _state_.[[HostDefined]], _state_).
                     1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
@@ -929,7 +929,7 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Let _stack_ be a new empty List.
-            1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0)).
+            1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0, <ins>_importedNames_</ins>)).
             1. If _result_ is an abrupt completion, then
               1. For each Cyclic Module Record _m_ of _stack_, do
                 1. Assert: _m_.[[Status]] is ~linking~.
@@ -942,7 +942,7 @@ contributors: Nicolò Ribaudo
             1. <ins>For each ModuleRequest Record _request_ of _indirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
-              1. <ins>If _requiredModule_.[[Status]] is ~unlinked~, perform ? _requiredModule_.Link(_request_.[[ImportedNames]]).</ins>
+              1. <ins>If _requiredModule_.[[Status]] is ~unlinked~, perform ? _requiredModule_.Link(ExcludeUnrequestedReexportedImportedNames(_request_.[[ImportedNames]], _importedNames_)).</ins>
             1. Return ~unused~.
           </emu-alg>
 
@@ -952,6 +952,7 @@ contributors: Nicolò Ribaudo
                 _module_: a Module Record,
                 _stack_: a List of Cyclic Module Records,
                 _index_: a non-negative integer,
+                <ins>_parentImportedNames_: ~all~ or a List of Strings,</ins>
               ): either a normal completion containing a non-negative integer or a throw completion
             </h1>
             <dl class="header">
@@ -974,7 +975,7 @@ contributors: Nicolò Ribaudo
               1. <del>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</del>
                 1. <del>Let _requiredModule_ be GetImportedModule(_module_, _request_).</del>
               1. <ins>Let _linkingList_ be « ».</ins>
-              1. <ins>Perform BuildLinkingList(_linkingList_, _module_, _module_.[[RequestedModules]], « »).</ins>
+              1. <ins>Perform BuildLinkingList(_linkingList_, _module_, _module_.[[RequestedModules]], « », _parentImportedNames_).</ins>
               1. <ins>For each Module Record _requiredModule_ of _linkingList_, do</ins>
                 1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
                 1. If _requiredModule_ is a Cyclic Module Record, then
@@ -1001,10 +1002,11 @@ contributors: Nicolò Ribaudo
             <h1>
               <ins>
                 BuildLinkingList (
-                  _linkingList_: a List of Module Records,
+                  _linkingList_: a List of Records with fields [[Module]] (a Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
                   _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
+                  _parentImportedNames_: ~all~ or a List of Strings,
                 ): ~unused~
               </ins>
             </h1>
@@ -1013,18 +1015,20 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                 1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
-                1. If _linkingList_ does not contain _requiredModule_, then
-                  1. Append _requiredModule_ to _linkingList_.
+                1. If _linkingList_ does not contain a Record whose [[Module]] field is _requiredModule_, then
+                  1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: ExcludeUnrequestedReexportedImportedNames(_request_.[[ImportedNames]], _parentImportedNames_) } to _linkingList_.
                   1. If _requiredModule_ is a Cyclic Module Record, then
                     1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
+                1. Else,
+                  1. <span style="background:yellow">TODO: update imported names in linking list, or add a separate entry for the same module to preserve the right order</span>
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _requiredModule_.
                   1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _requiredModule_.
-                  1. Let _remainingImportedNames_ be ExcludeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
+                  1. Let _remainingImportedNames_ be ExcludeImportedNames(IntersectImportedNames(_request_.[[ImportedNames]], _parentImportedNames_), _previous_.[[ImportedNames]]).
                   1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
                   1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _remainingImportedNames_).
-                  1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _indirectRequests_, _previouslyImportedNames_).
+                  1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _indirectRequests_, _previouslyImportedNames_, ExcludeUnrequestedReexportedImportedNames(_request_.[[ImportedNames]], _parentImportedNames_)).
               1. Return ~unused~.
             </emu-alg>
           </emu-clause>
@@ -1454,7 +1458,7 @@ contributors: Nicolò Ribaudo
             1. Else,
               1. Append the LoadedModuleRequest Record { [[Specifier]]: _moduleRequest_.[[Specifier]], [[Attributes]]: _moduleRequest_.[[Attributes]], [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
           1. If _payload_ is a GraphLoadingState Record, then
-            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>_moduleRequest_.[[ImportedNames]]</ins>).
+            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>ExcludeUnrequestedReexportedImportedNames(_moduleRequest_.[[ImportedNames]], <span style="background-color: yellow">TODO: parent imported names</span>)</ins>).
           1. Else,
             1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]]).
           1. Return ~unused~.
@@ -1657,6 +1661,28 @@ contributors: Nicolò Ribaudo
           </emu-alg>
         </emu-clause>
 
+        <emu-clause id="sec-IntersectImportedNames" type="abstract operation">
+          <h1>
+            <ins>
+              IntersectImportedNames (
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header"></dl>
+
+          <emu-alg>
+            1. If _a_ is ~all~, return _b_.
+            1. If _b_ is ~all~, return _a_.
+            1. Assert: _a_ and _b_ are Lists of Strings.
+            1. Let _result_ be a new empty List.
+            1. For each String _name_ of _a_, do
+              1. If _b_ contains _name_, append _name_ to _result
+            1. Return _result_.
+          </emu-alg>
+        </emu-clause>
+
         <emu-clause id="sec-ExcludeImportedNames" type="abstract operation">
           <h1>
             <ins>
@@ -1676,6 +1702,33 @@ contributors: Nicolò Ribaudo
             1. If _a_ is ~all~, return ~all~.
             1. Assert: _a_ and _b_ are Lists of Strings.
             1. Return a new List containing all the elements of _a_ that are not also elements of _b_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-ExcludeUnrequestedReexportedImportedNames" type="abstract operation">
+          <h1>
+            <ins>
+              ExcludeUnrequestedReexportedImportedNames (
+                _importedNames_: ~all~ or a List of Strings,
+                _parentImportedNames_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd></dd>
+          </dl>
+
+          <emu-alg>
+            1. If _importedNames_ is ~all~, then
+              1. <span style="background-color: yellow;">TODO: Handle the `export * from` case.</span>
+              1. Return ~all~.
+            1. Let _result_ be a new empty List.
+            1. For each String _name_ of _importedNames_, do
+              1. If _name_ is imported through an |ImportDeclaration|, append _name_ to _result_.
+              1. Assert: _name_ is imported through an |ExportDeclaration| with an |ExportFromClause|.
+              1. If _parentImportedNames_ is ~all~ or _parentImportedNames_ contains _name_, append _name_ to _result_.
+            1. Return _result_.
           </emu-alg>
         </emu-clause>
       </emu-clause>
