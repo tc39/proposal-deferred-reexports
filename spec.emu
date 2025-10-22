@@ -288,12 +288,12 @@ contributors: Nicolò Ribaudo
           1. Let _requests_ be the ModuleRequests of |ModuleItemList|.
           1. Let _additionalRequests_ be the ModuleRequests of |ModuleItem|.
           1. For each ModuleRequest Record _mr_ of _additionalRequests_, do
+            1. <del>If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</del>
             1. <ins>Let _existingRequest_ be ~empty~.</ins>
-            1. <ins>For each ModuleRequests Record _mr2_ of _additionalRequests_, do</ins>
+            1. <ins>For each ModuleRequests Record _mr2_ of _requests_, do</ins>
               1. <ins>If ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
                 1. <ins>Assert: _existingRequest_ is ~empty~.</ins>
                 1. <ins>Set _existingRequest_ to _mr2_.</ins>
-            1. <del>If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</del>
             1. <ins>If _existingRequest_ is ~empty~, then</ins>
               1. Append _mr_ to _requests_.
             1. <ins>Else,</ins>
