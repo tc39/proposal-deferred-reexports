@@ -288,12 +288,12 @@ contributors: Nicolò Ribaudo
           1. Let _requests_ be the ModuleRequests of |ModuleItemList|.
           1. Let _additionalRequests_ be the ModuleRequests of |ModuleItem|.
           1. For each ModuleRequest Record _mr_ of _additionalRequests_, do
+            1. <del>If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</del>
             1. <ins>Let _existingRequest_ be ~empty~.</ins>
-            1. <ins>For each ModuleRequests Record _mr2_ of _additionalRequests_, do</ins>
+            1. <ins>For each ModuleRequests Record _mr2_ of _requests_, do</ins>
               1. <ins>If ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
                 1. <ins>Assert: _existingRequest_ is ~empty~.</ins>
                 1. <ins>Set _existingRequest_ to _mr2_.</ins>
-            1. <del>If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</del>
             1. <ins>If _existingRequest_ is ~empty~, then</ins>
               1. Append _mr_ to _requests_.
             1. <ins>Else,</ins>
@@ -494,7 +494,7 @@ contributors: Nicolò Ribaudo
                 ResolveExport(_exportName_ [, _resolveSet_])
               </td>
               <td>
-                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModule]] is the list of modules imported through `export defer` that the binding resolution process needs to go through, which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModule]] is the list of modules imported through `export defer` that the binding resolution process needs to go through which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
@@ -1653,7 +1653,11 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
-            1. Return the list-concatenation of _a_ and _b_.
+            1. Let _merged_ be a copy of the List _a_.
+            1. For each String _name_ of _b_, do
+              1. If _merged_ does not contain _name_, then
+                1. Append _name_ to _merged_.
+            1. Return _merged_.
           </emu-alg>
         </emu-clause>
 
