@@ -494,14 +494,14 @@ contributors: Nicolò Ribaudo
                 ResolveExport(_exportName_ [, _resolveSet_])
               </td>
               <td>
-                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModule]] is the list of modules imported through `export defer` that the binding resolution process needs to go through which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModules]] is the list of modules imported through `export defer` that the binding resolution process needs to go through which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
             </tr>
             <tr>
               <td>
-                Link(_importedNames_)
+                Link(<ins>_importedNames_</ins>)
               </td>
               <td>
                 <p>Prepare the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>
