@@ -858,11 +858,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
                   1. <del>Append _module_ to _state_.[[Visited]].</del>
                   1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: « » } to _state_.[[Visited]].</ins>
-                1. <ins>Assert: _state_.[[Visited]] contains a Record whose [[Module]] field is _module_.</ins>
-                1. <ins>Let _previous_ be the Record in _state_.[[Visited]] whose [[Module]] field is _module_.</ins>
-                1. <ins>Let _newImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).</ins>
-                1. <ins>Set _previous_.[[ImportedNames]] to MergeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).</ins>
-                1. <ins>Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_module_, _newImportedNames_).</ins>
+                1. <ins>Let _indirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _state_.[[Visited]]).</ins>
                 1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _indirectRequests_.</ins>
                 1. Let _requestedModulesCount_ be the number of elements in <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>.
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
@@ -1019,11 +1015,7 @@ contributors: Nicolò Ribaudo
                     1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _requiredModule_.
-                  1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _requiredModule_.
-                  1. Let _newImportedNames_ be ExcludeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
-                  1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _newImportedNames_).
+                  1. Let _indirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
                   1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _indirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
@@ -1493,6 +1485,30 @@ contributors: Nicolò Ribaudo
               1. Else,
                 1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
           1. Return _requests_.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-GetNewOptionalIndirectExportsModuleRequests" type="abstract operation">
+        <h1>
+          <ins>
+            GetNewOptionalIndirectExportsModuleRequests (
+              _module_: a Cyclic Module Record,
+              _importedNames_: ~all~ or a List of Strings,
+              _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
+            ): a List of ModuleRequest Records
+          </ins>
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+
+        <emu-alg>
+          1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _module_.
+          1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
+          1. Let _newImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).
+          1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_previous_.[[ImportedNames]], _newImportedNames_).
+          1. Return GetOptionalIndirectExportsModuleRequests(_module_, _newImportedNames_).
         </emu-alg>
       </emu-clause>
     </emu-clause>
