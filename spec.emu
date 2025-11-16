@@ -325,6 +325,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _specifier_ be SV of |FromClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
+          1. <ins>Assert: _importedNames_ is ~all~.</ins>
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
@@ -334,6 +335,7 @@ contributors: Nicolò Ribaudo
           1. Let _specifier_ be SV of |FromClause|.
           1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
+          1. <ins>Assert: _importedNames_ is ~all~.</ins>
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
@@ -371,6 +373,10 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
+
+        <emu-note type="editor">
+          <p>TODO: when integratng with `import source`, assert that [[ImportedNames]] is an empty List.</p>
+        </emu-note>
 
         <emu-clause id="sec-ExportFromDeclarationModuleRequest" type="abstract operation">
           <h1>
