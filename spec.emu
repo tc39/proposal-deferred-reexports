@@ -325,6 +325,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _specifier_ be SV of |FromClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
+          1. <ins>Assert: _importedNames_ is ~all~.</ins>
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
@@ -334,6 +335,7 @@ contributors: Nicolò Ribaudo
           1. Let _specifier_ be SV of |FromClause|.
           1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
+          1. <ins>Assert: _importedNames_ is ~all~.</ins>
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
@@ -371,6 +373,10 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
+
+        <emu-note type="editor">
+          <p>TODO: when integratng with `import source`, assert that [[ImportedNames]] is an empty List.</p>
+        </emu-note>
 
         <emu-clause id="sec-ExportFromDeclarationModuleRequest" type="abstract operation">
           <h1>
@@ -494,14 +500,14 @@ contributors: Nicolò Ribaudo
                 ResolveExport(_exportName_ [, _resolveSet_])
               </td>
               <td>
-                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModule]] is the list of modules imported through `export defer` that the binding resolution process needs to go through which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModules]] is the list of modules imported through `export defer` that the binding resolution process needs to go through which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
             </tr>
             <tr>
               <td>
-                Link(_importedNames_)
+                Link(<ins>_importedNames_</ins>)
               </td>
               <td>
                 <p>Prepare the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>
@@ -858,11 +864,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
                   1. <del>Append _module_ to _state_.[[Visited]].</del>
                   1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: « » } to _state_.[[Visited]].</ins>
-                1. <ins>Assert: _state_.[[Visited]] contains a Record whose [[Module]] field is _module_.</ins>
-                1. <ins>Let _previous_ be the Record in _state_.[[Visited]] whose [[Module]] field is _module_.</ins>
-                1. <ins>Let _remainingImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).</ins>
-                1. <ins>Set _previous_.[[ImportedNames]] to MergeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).</ins>
-                1. <ins>Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_module_, _remainingImportedNames_).</ins>
+                1. <ins>Let _indirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _state_.[[Visited]]).</ins>
                 1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _indirectRequests_.</ins>
                 1. Let _requestedModulesCount_ be the number of elements in <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>.
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
@@ -1019,11 +1021,7 @@ contributors: Nicolò Ribaudo
                     1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _requiredModule_.
-                  1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _requiredModule_.
-                  1. Let _remainingImportedNames_ be ExcludeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
-                  1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_request_.[[ImportedNames]], _previous_.[[ImportedNames]]).
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _remainingImportedNames_).
+                  1. Let _indirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
                   1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _indirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
@@ -1493,6 +1491,30 @@ contributors: Nicolò Ribaudo
               1. Else,
                 1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
           1. Return _requests_.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-GetNewOptionalIndirectExportsModuleRequests" type="abstract operation">
+        <h1>
+          <ins>
+            GetNewOptionalIndirectExportsModuleRequests (
+              _module_: a Cyclic Module Record,
+              _importedNames_: ~all~ or a List of Strings,
+              _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
+            ): a List of ModuleRequest Records
+          </ins>
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+
+        <emu-alg>
+          1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _module_.
+          1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
+          1. Let _newImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).
+          1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_previous_.[[ImportedNames]], _newImportedNames_).
+          1. Return GetOptionalIndirectExportsModuleRequests(_module_, _newImportedNames_).
         </emu-alg>
       </emu-clause>
     </emu-clause>
