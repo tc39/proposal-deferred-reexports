@@ -1430,6 +1430,84 @@ contributors: Nicolò Ribaudo
             </emu-alg>
           </emu-clause>
         </emu-clause>
+
+        <emu-clause id="sec-source-text-module-record-cyclic-module-record-methods">
+          <h1>Implementation of Cyclic Module Record Abstract Methods</h1>
+
+          <p>The following are the concrete methods for Source Text Module Record that implement the corresponding Cyclic Module Record abstract methods defined in <emu-xref href="#table-cyclic-module-methods"></emu-xref>.</p>
+
+          <emu-clause id="sec-source-text-module-record-initialize-environment" type="concrete method">
+            <h1>InitializeEnvironment ( ): either a normal completion containing ~unused~ or a throw completion</h1>
+            <dl class="header">
+              <dt>for</dt>
+              <dd>a Source Text Module Record _module_</dd>
+            </dl>
+
+            <emu-alg>
+              1. For each ExportEntry Record _e_ of _module_.[[IndirectExportEntries]], do
+                1. Assert: _e_.[[ExportName]] is not *null*.
+                1. Let _resolution_ be _module_.ResolveExport(_e_.[[ExportName]]).
+                1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
+                1. Assert: _resolution_ is a ResolvedBinding Record.
+                1. <ins>If _resolution_.[[Module]] is a Cyclic Module Record and _e_ was exported by an |ExportDeclaration| with an |ExportFromClause|, then</ins>
+                  1. <ins>For each ExportEntry Record _optionalIEE_ of _resolution_.[[Module]].[[OptionalIndirectExportEntries]], do</ins>
+                    1. <ins>If _optionalIEE_.[[ExportName]] is _e_.[[ImportName]], throw a *SyntaxError* exception.</ins>
+              1. Assert: All named exports from _module_ are resolvable.
+              1. Let _realm_ be _module_.[[Realm]].
+              1. Assert: _realm_ is not *undefined*.
+              1. Let _env_ be NewModuleEnvironment(_realm_.[[GlobalEnv]]).
+              1. Set _module_.[[Environment]] to _env_.
+              1. For each ImportEntry Record _in_ of _module_.[[ImportEntries]], do
+                1. Let _importedModule_ be GetImportedModule(_module_, _in_.[[ModuleRequest]]).
+                1. If _in_.[[ImportName]] is ~namespace-object~, then
+                  1. Let _namespace_ be GetModuleNamespace(_importedModule_, _in_.[[ModuleRequest]].[[Phase]]).
+                  1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
+                  1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
+                1. Else,
+                  1. Let _resolution_ be _importedModule_.ResolveExport(_in_.[[ImportName]]).
+                  1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
+                  1. If _resolution_.[[BindingName]] is ~namespace~, then
+                    1. NOTE: In this case we have an `export * as ns from "";` declaration. `import * as ns from ""; export { ns }` indirect re-exports have _resolution_.[[BindingName]] set to *"ns"*.
+                    1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], ~evaluation~).
+                    1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
+                    1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
+                  1. Else,
+                    1. Perform _env_.CreateImportBinding(_in_.[[LocalName]], _resolution_.[[Module]], _resolution_.[[BindingName]]).
+              1. Let _moduleContext_ be a new ECMAScript code execution context.
+              1. Set the Function of _moduleContext_ to *null*.
+              1. Assert: _module_.[[Realm]] is not *undefined*.
+              1. Set the Realm of _moduleContext_ to _module_.[[Realm]].
+              1. Set the ScriptOrModule of _moduleContext_ to _module_.
+              1. Set the VariableEnvironment of _moduleContext_ to _module_.[[Environment]].
+              1. Set the LexicalEnvironment of _moduleContext_ to _module_.[[Environment]].
+              1. Set the PrivateEnvironment of _moduleContext_ to *null*.
+              1. Set _module_.[[Context]] to _moduleContext_.
+              1. Push _moduleContext_ onto the execution context stack; _moduleContext_ is now the running execution context.
+              1. Let _code_ be _module_.[[ECMAScriptCode]].
+              1. Let _varDeclarations_ be the VarScopedDeclarations of _code_.
+              1. Let _declaredVarNames_ be a new empty List.
+              1. For each element _d_ of _varDeclarations_, do
+                1. For each element _dn_ of the BoundNames of _d_, do
+                  1. If _declaredVarNames_ does not contain _dn_, then
+                    1. Perform ! _env_.CreateMutableBinding(_dn_, *false*).
+                    1. Perform ! _env_.InitializeBinding(_dn_, *undefined*).
+                    1. Append _dn_ to _declaredVarNames_.
+              1. Let _lexDeclarations_ be the LexicallyScopedDeclarations of _code_.
+              1. Let _privateEnv_ be *null*.
+              1. For each element _d_ of _lexDeclarations_, do
+                1. For each element _dn_ of the BoundNames of _d_, do
+                  1. If IsConstantDeclaration of _d_ is *true*, then
+                    1. Perform ! _env_.CreateImmutableBinding(_dn_, *true*).
+                  1. Else,
+                    1. Perform ! _env_.CreateMutableBinding(_dn_, *false*).
+                  1. If _d_ is either a |FunctionDeclaration|, a |GeneratorDeclaration|, an |AsyncFunctionDeclaration|, or an |AsyncGeneratorDeclaration|, then
+                    1. Let _fo_ be InstantiateFunctionObject of _d_ with arguments _env_ and _privateEnv_.
+                    1. Perform ! _env_.InitializeBinding(_dn_, _fo_).
+              1. Remove _moduleContext_ from the execution context stack.
+              1. Return ~unused~.
+            </emu-alg>
+          </emu-clause>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="11">
