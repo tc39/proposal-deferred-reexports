@@ -480,7 +480,7 @@ contributors: Nicolò Ribaudo
             </thead>
             <tr>
               <td>
-                LoadRequestedModules(_importedNames_, [_hostDefined_])
+                LoadRequestedModules(<ins>_importedNames_,</ins> [_hostDefined_])
               </td>
               <td>
                 <p>Prepares the module for linking by recursively loading all its dependencies, and returns a promise.</p>
