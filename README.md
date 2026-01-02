@@ -274,7 +274,7 @@ Always executing `defer-exported` modules after the module that re-exports them 
 
 The proposed ordering is also much simpler to polyfill in tools, which can extract the `export defer` declaration from imported files and replace them with `import` statements in the importer module.
 
-`export defer * from './foo.js` is not supported and not planned to be supported, because we require that deferred reexport names can be explicit known without further dependency loading, as a requirement of lazy network loading.
+`export defer * from './foo.js` is not supported and not planned to be supported, because we require that deferred reexport names can be explicitly known without further dependency loading, as a requirement of lazy network loading.
 
 ### Namespace imports
 
