@@ -1476,6 +1476,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _requests_ be a new empty List.
           1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
+            1. Assert: _oie_.[[ExportName]] is not *null*.
             1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
               1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
               1. Let _existingRequest_ be ~empty~.
