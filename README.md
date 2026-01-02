@@ -274,33 +274,44 @@ Always executing `defer-exported` modules after the module that re-exports them 
 
 The proposed ordering is also much simpler to polyfill in tools, which can extract the `export defer` declaration from imported files and replace them with `import` statements in the importer module.
 
-### Integration with `import defer`
+`export defer * from './foo.js` is not supported and not planned to be supported, because we require that deferred reexport names can be explicit known without further dependency loading, as a requirement of lazy network loading.
 
-The `import defer` proposal established that the `defer` keyword means "only execute this module when I actually need it", when using _namespace_ imports. On module namespace objects, `export defer` would follow similar semantics:
+### Namespace imports
+
+On module namespace objects, `export defer` will "deoptimize" and eagerly load all modules, but still allow lazy execution of those modules:
+
 ```js
 // math.js
 export defer { add } from "./math/add.js";
 export defer { sub } from "./math/sub.js";
 export { mul } from "./math/mul.js";
+console.log('executed math');
 ```
 ```js
 // index.js
-import * as math from "./math.js"; // Loads everything, executes ./math.js and ./math/mul.js
+import * as math from "./math.js"; // Loads everything (both ./math.js and ./math/mul.js), logs 'executed math'
 
 math.add; // Executes ./math/add.js
-math.sub; // Executes ./math/sub.js
+math.sub; // Executes ./match/sub.js
 ```
 
-This allows even more control when pairing `export defer` with `import defer`:
+### Integration with `import defer`
+
+The `import defer` proposal established that the `defer` keyword means "only execute this module when I actually need it", when using _namespace_ imports. When interacting with `export defer`, this allows for lazily executing the wrapper modules as well:
+
 ```js
-// math2.js
+// math.js
 export defer { add } from "./math/add.js";
 export defer { sub } from "./math/sub.js";
+export { mul } from "./math/mul.js";
+console.log('executed math');
 ```
 ```js
-// index2.js
-import defer * as math from "./math2.js"; // Loads everything, executes nothing
+// index.js
+import * as math from "./math.js"; // Loads everything (both ./math.js and ./math/mul.js), no execution at all
 
-math.add; // Executes ./math2.js ./math/add.js
-math.sub; // Executes ./math/sub.js
+math.add; // Executes ./math/add.js, logs 'executed math'
+math.sub; // Executes ./match/sub.js
 ```
+
+All dependencies are still loaded upfront.
