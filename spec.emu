@@ -626,17 +626,6 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
-                <ins>[[OptionalIndirectExportEntries]]</ins>
-              </td>
-              <td>
-                <ins>a List of ExportEntry Records whose [[LocalName]] is *null*.</ins>
-              </td>
-              <td>
-                <ins>A list of all the bindings re-exported through `export defer { ... } from "..."`. The List is in source text occurrence order.</ins>
-              </td>
-            </tr>
-            <tr>
-              <td>
                 [[CycleRoot]]
               </td>
               <td>
@@ -730,6 +719,19 @@ contributors: Nicolò Ribaudo
               </td>
               <td>
                 Evaluate the module's code within its execution context. If this module has *true* in [[HasTLA]], then a PromiseCapability Record is passed as an argument, and the method is expected to resolve or reject the given capability. In this case, the method must not throw an exception, but instead reject the PromiseCapability Record if necessary.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <ins>GetOptionalIndirectExportsModuleRequests( [ _importedNames_ ])</ins>
+              </td>
+              <td>
+                <p><ins>Returns a list of ModuleRequest Records describing the additional dependencies (not already listed in this module's [[RequestedModules]]) needed to be able to import _importedNames_ from this module. In case of a Source Text Module Record, these would be the dependencies specified through `export defer`. _importedNames_ is either ~all~ or a List of Strings.</ins></p>
+
+                <p><ins>This abstract method has the following default implementation:</ins></p>
+                <emu-alg>
+                  1. <ins>Return a new empty List.</ins>
+                </emu-alg>
               </td>
             </tr>
           </table>
@@ -940,7 +942,7 @@ contributors: Nicolò Ribaudo
               1. Return ? _result_.
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Assert: _stack_ is empty.
-            1. <ins>Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_module_, _importedNames_).</ins>
+            1. <ins>Let _indirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
             1. <ins>For each ModuleRequest Record _request_ of _indirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
@@ -1172,7 +1174,7 @@ contributors: Nicolò Ribaudo
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Let _importedNames_ be _request_.[[ImportedNames]].
                   1. [id="step-BuildEvaluationList-reset-importedNames"] If _importedNames_ = ~all~, set _importedNames_ to « ».
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _importedNames_).
+                  1. Let _indirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
                   1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _indirectRequests_).
               1. Return ~unused~.
             </emu-alg>
@@ -1254,17 +1256,152 @@ contributors: Nicolò Ribaudo
                 1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
                   1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_)).
-                  1. Let _indirectRequests_ be GetOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]]).
+                  1. Let _indirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_request_.[[ImportedNames]]).
                   1. Perform ListAppendUnique(_result_, InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _indirectRequests_, _seen_)).
                 1. Return _result_.
               </emu-alg>
             </emu-clause>
           </emu-clause>
         </emu-clause>
+
+        <emu-clause id="sec-GetNewOptionalIndirectExportsModuleRequests" type="abstract operation" number="100">
+          <h1>
+            <ins>
+              GetNewOptionalIndirectExportsModuleRequests (
+                _module_: a Cyclic Module Record,
+                _importedNames_: ~all~ or a List of Strings,
+                _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
+              ): a List of ModuleRequest Records
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd></dd>
+          </dl>
+
+          <emu-alg>
+            1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _module_.
+            1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
+            1. Let _newImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).
+            1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_previous_.[[ImportedNames]], _newImportedNames_).
+            1. Return _module_.GetOptionalIndirectExportsModuleRequests(_newImportedNames_).
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-source-text-module-records" number="7">
         <h1>Source Text Module Records</h1>
+
+        <p>A <dfn id="sourctextmodule-record" variants="Source Text Module Records">Source Text Module Record</dfn> is used to represent information about a module that was defined from ECMAScript source text (<emu-xref href="#sec-ecmascript-language-source-code"></emu-xref>) that was parsed using the goal symbol |Module|. Its fields contain digested information about the names that are imported and exported by the module, and its concrete methods use these digests to link and evaluate the module.</p>
+
+        <p>A Source Text Module Record can exist in a module graph with other subclasses of the abstract Module Record type, and can participate in cycles with other subclasses of the Cyclic Module Record type.</p>
+
+        <p>In addition to the fields defined in <emu-xref href="#table-cyclic-module-fields"></emu-xref>, Source Text Module Records have the additional fields listed in <emu-xref href="#table-additional-fields-of-source-text-module-records"></emu-xref>. Each of these fields is initially set in ParseModule.</p>
+        <emu-table id="table-additional-fields-of-source-text-module-records" caption="Additional Fields of Source Text Module Records" oldids="table-38">
+          <table>
+            <thead>
+              <tr>
+                <th>
+                  Field Name
+                </th>
+                <th>
+                  Value Type
+                </th>
+                <th>
+                  Meaning
+                </th>
+              </tr>
+            </thead>
+            <tr>
+              <td>
+                [[ECMAScriptCode]]
+              </td>
+              <td>
+                a Parse Node
+              </td>
+              <td>
+                The result of parsing the source text of this module using |Module| as the goal symbol.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[Context]]
+              </td>
+              <td>
+                an ECMAScript code execution context or ~empty~
+              </td>
+              <td>
+                The execution context associated with this module. It is ~empty~ until the module's environment has been initialized.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[ImportMeta]]
+              </td>
+              <td>
+                an Object or ~empty~
+              </td>
+              <td>
+                An object exposed through the `import.meta` meta property. It is ~empty~ until it is accessed by ECMAScript code.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[ImportEntries]]
+              </td>
+              <td>
+                a List of ImportEntry Records
+              </td>
+              <td>
+                A List of ImportEntry records derived from the code of this module.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[LocalExportEntries]]
+              </td>
+              <td>
+                a List of ExportEntry Records
+              </td>
+              <td>
+                A List of ExportEntry records derived from the code of this module that correspond to declarations that occur within the module.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[IndirectExportEntries]]
+              </td>
+              <td>
+                a List of ExportEntry Records
+              </td>
+              <td>
+                A List of ExportEntry records derived from the code of this module that correspond to reexported imports that occur within the module or exports from `export * as namespace` declarations.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[StarExportEntries]]
+              </td>
+              <td>
+                a List of ExportEntry Records
+              </td>
+              <td>
+                A List of ExportEntry records derived from the code of this module that correspond to `export *` declarations that occur within the module, not including `export * as namespace` declarations.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <ins>[[OptionalIndirectExportEntries]]</ins>
+              </td>
+              <td>
+                <ins>a List of ExportEntry Records whose [[LocalName]] is *null*.</ins>
+              </td>
+              <td>
+                <ins>A list of all the bindings re-exported through `export defer { ... } from "..."`. The List is in source text occurrence order.</ins>
+              </td>
+            </tr>
+          </table>
+        </emu-table>
 
         <emu-clause id="sec-parsemodule" type="abstract operation">
           <h1>
@@ -1430,6 +1567,46 @@ contributors: Nicolò Ribaudo
             </emu-alg>
           </emu-clause>
         </emu-clause>
+
+        <emu-clause id="sec-source-text-module-record-cyclic-module-record-methods">
+          <h1>Implementation of Cyclic Module Record Abstract Methods</h1>
+
+          <p>The following are the concrete methods for Source Text Module Record that implement the corresponding Cyclic Module Record abstract methods defined in <emu-xref href="#table-cyclic-module-methods"></emu-xref>.</p>
+
+          <emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="concrete method" number="3">
+            <h1>
+              <ins>
+                GetOptionalIndirectExportsModuleRequests (
+                  _importedNames_: ~all~ or a List of Strings,
+                ): a List of ModuleRequest Records
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>for</dt>
+              <dd>a Source Text Module Record _module_</dd>
+            </dl>
+
+            <emu-alg>
+              1. Let _requests_ be a new empty List.
+              1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
+                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+                  1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
+                  1. Let _existingRequest_ be ~empty~.
+                  1. For each ModuleRequest Record _r_ in _requests_, do
+                    1. If _existingRequest_ is ~empty~ and ModuleRequestsEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
+                      1. Set _existingRequest_ to _r_.
+                  1. Let _newImportedNames_ be ~all~.
+                  1. Assert: _oie_.[[ImportName]] is a String or ~all~.
+                  1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
+                  1. If _existingRequest_ is ~empty~, then
+                    1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_ }.
+                    1. Append _request_ to _requests_.
+                  1. Else,
+                    1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
+              1. Return _requests_.
+            </emu-alg>
+          </emu-clause>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="11">
@@ -1456,65 +1633,6 @@ contributors: Nicolò Ribaudo
           1. Else,
             1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]]).
           1. Return ~unused~.
-        </emu-alg>
-      </emu-clause>
-
-      <emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="abstract operation" number="100">
-        <h1>
-          <ins>
-            GetOptionalIndirectExportsModuleRequests (
-              _module_: a Cyclic Module Record,
-              _importedNames_: ~all~ or a List of Strings,
-            ): a List of ModuleRequest Records
-          </ins>
-        </h1>
-        <dl class="header">
-          <dt>description</dt>
-          <dd></dd>
-        </dl>
-
-        <emu-alg>
-          1. Let _requests_ be a new empty List.
-          1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
-            1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
-              1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
-              1. Let _existingRequest_ be ~empty~.
-              1. For each ModuleRequest Record _r_ in _requests_, do
-                1. If _existingRequest_ is ~empty~ and ModuleRequestsEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
-                  1. Set _existingRequest_ to _r_.
-              1. Let _newImportedNames_ be ~all~.
-              1. Assert: _oie_.[[ImportName]] is a String or ~all~.
-              1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
-              1. If _existingRequest_ is ~empty~, then
-                1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_ }.
-                1. Append _request_ to _requests_.
-              1. Else,
-                1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
-          1. Return _requests_.
-        </emu-alg>
-      </emu-clause>
-
-      <emu-clause id="sec-GetNewOptionalIndirectExportsModuleRequests" type="abstract operation">
-        <h1>
-          <ins>
-            GetNewOptionalIndirectExportsModuleRequests (
-              _module_: a Cyclic Module Record,
-              _importedNames_: ~all~ or a List of Strings,
-              _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
-            ): a List of ModuleRequest Records
-          </ins>
-        </h1>
-        <dl class="header">
-          <dt>description</dt>
-          <dd></dd>
-        </dl>
-
-        <emu-alg>
-          1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _module_.
-          1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
-          1. Let _newImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).
-          1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_previous_.[[ImportedNames]], _newImportedNames_).
-          1. Return GetOptionalIndirectExportsModuleRequests(_module_, _newImportedNames_).
         </emu-alg>
       </emu-clause>
     </emu-clause>
