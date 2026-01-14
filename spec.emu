@@ -1078,29 +1078,32 @@ contributors: Nicolò Ribaudo
               1. <del>Return _module_.[[TopLevelCapability]].[[Promise]].</del>
             1. <ins>If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then</ins>
               1. <ins>Assert: _module_.[[CycleRoot]].[[TopLevelCapability]] is not ~empty~.</ins>
-              1. <ins>Return _module_.[[CycleRoot]].[[TopLevelCapability]].[[Promise]].</ins>
-            1. <ins>Assert: _module_.[[CycleRoot]] and _module_.[[TopLevelCapability]] are ~empty~.</ins>
-            1. Let _stack_ be a new empty List.
-            1. Let _capability_ be ! NewPromiseCapability(%Promise%).
-            1. Set _module_.[[TopLevelCapability]] to _capability_.
-            1. Let _result_ be Completion(InnerModuleEvaluation(_module_, _stack_, 0)).
-            1. If _result_ is an abrupt completion, then
-              1. For each Cyclic Module Record _m_ of _stack_, do
-                1. Assert: _m_.[[Status]] is ~evaluating~.
-                1. Set _m_.[[Status]] to ~evaluated~.
-                1. Set _m_.[[EvaluationError]] to _result_.
-              1. Assert: _module_.[[Status]] is ~evaluated~.
-              1. Assert: _module_.[[EvaluationError]] is _result_.
-              1. Perform ! Call(_capability_.[[Reject]], *undefined*, « _result_.[[Value]] »).
-            1. Else,
-              1. Assert: _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
-              1. Assert: _module_.[[EvaluationError]] is ~empty~.
-              1. If _module_.[[Status]] is ~evaluated~, then
-                1. NOTE: This implies that evaluation of _module_ completed synchronously.
-                1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
-                1. Perform ! Call(_capability_.[[Resolve]], *undefined*, « *undefined* »).
-              1. Assert: _stack_ is empty.
-            1. Return _capability_.[[Promise]].
+              1. <ins>Let _topLevelPromise_ be _module_.[[CycleRoot]].[[TopLevelCapability]].[[Promise]].</ins>
+            1. <ins>Else,</ins>
+              1. <ins>Assert: _module_.[[CycleRoot]] and _module_.[[TopLevelCapability]] are ~empty~.</ins>
+              1. Let _stack_ be a new empty List.
+              1. Let _capability_ be ! NewPromiseCapability(%Promise%).
+              1. Set _module_.[[TopLevelCapability]] to _capability_.
+              1. Let _result_ be Completion(InnerModuleEvaluation(_module_, _stack_, 0)).
+              1. If _result_ is an abrupt completion, then
+                1. For each Cyclic Module Record _m_ of _stack_, do
+                  1. Assert: _m_.[[Status]] is ~evaluating~.
+                  1. Set _m_.[[Status]] to ~evaluated~.
+                  1. Set _m_.[[EvaluationError]] to _result_.
+                1. Assert: _module_.[[Status]] is ~evaluated~.
+                1. Assert: _module_.[[EvaluationError]] is _result_.
+                1. Perform ! Call(_capability_.[[Reject]], *undefined*, « _result_.[[Value]] »).
+              1. Else,
+                1. Assert: _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+                1. Assert: _module_.[[EvaluationError]] is ~empty~.
+                1. If _module_.[[Status]] is ~evaluated~, then
+                  1. NOTE: This implies that evaluation of _module_ completed synchronously.
+                  1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
+                  1. Perform ! Call(_capability_.[[Resolve]], *undefined*, « *undefined* »).
+                1. Assert: _stack_ is empty.
+              1. <del>Return _capability_.[[Promise]].</del>
+              1. <ins>Let _topLevelPromise_ be _capability_.[[Promise]].</ins>
+            1. <ins>Return _topLevelPromise_.</ins>
           </emu-alg>
 
           <emu-clause id="sec-innermoduleevaluation" type="abstract operation">
