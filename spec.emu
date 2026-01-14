@@ -539,7 +539,7 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. If ReadyForSyncExecution(_module_) is *false*, throw a *TypeError* exception.
+            1. If ReadyForSyncExecution(_module_, « ») is *false*, throw a *TypeError* exception.
             1. Let _promise_ be _module_.Evaluate().
             1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
             1. If _promise_.[[PromiseState]] is ~rejected~, then
@@ -548,6 +548,33 @@ contributors: Nicolò Ribaudo
               1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
             1. Return ~unused~.
           </emu-alg>
+
+          <emu-clause id="sec-ReadyForSyncExecution" type="abstract operation">
+            <h1>
+              ReadyForSyncExecution (
+                _module_: a Module Record,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
+                optional _seen_: a List of Module Records,
+              ): a Boolean
+            </h1>
+            <dl class="header"></dl>
+            <emu-alg>
+              1. If _module_ is not a Cyclic Module Record, return *true*.
+              1. If _seen_ is not present, set _seen_ to a new empty List.
+              1. If _seen_ contains _module_, return *true*.
+              1. Append _module_ to _seen_.
+              1. If _module_.[[Status]] is ~evaluated~, return *true*.
+              1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
+              1. Assert: _module_.[[Status]] is ~linked~.
+              1. If _module_.[[HasTLA]] is *true*, return *false*.
+              1. <ins>Let _requests_ be the list-concatenation of _module_.[[RequestedModules]] and _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_ ).</ins>
+              1. For each ModuleRequest Record _request_ of <del>_module_.[[RequestedModules]]</del><ins>_requests_</ins>, do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
+                1. If ReadyForSyncExecution(_requiredModule_, <ins>_request_.[[ImportedNames]],</ins> _seen_) is *false*, then
+                  1. Return *false*.
+              1. Return *true*.
+            </emu-alg>
+          </emu-clause>
         </emu-clause>
       </emu-clause>
 
