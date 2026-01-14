@@ -42,10 +42,10 @@ contributors: Nicolò Ribaudo
           1. Let _exports_ be ? GetModuleExportsList(_O_).
           1. If _exports_ does not contain _P_, return *undefined*.
           1. Let _m_ be _O_.[[Module]].
+          1. <ins>If _m_ is a Cyclic Module Record and _m_.GetOptionalIndirectExportsModuleRequests(« _P_ ») is not empty, then</ins>
+            1. <ins>Perform ? EvaluateModuleSync(_m_, « _P_ »).</ins>
           1. Let _binding_ be _m_.ResolveExport(_P_).
           1. Assert: _binding_ is a ResolvedBinding Record.
-          1. <ins>For each Module Record _deferredModule_ of _binding_.[[DeferredModules]], do</ins>
-            1. <ins>Perform ? EvaluateModuleSync(_deferredModule_).</ins>
           1. Let _targetModule_ be _binding_.[[Module]].
           1. Assert: _targetModule_ is not *undefined*.
           1. If _binding_.[[BindingName]] is ~namespace~, then
@@ -500,7 +500,7 @@ contributors: Nicolò Ribaudo
                 ResolveExport(_exportName_ [, _resolveSet_])
               </td>
               <td>
-                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~, <ins>[[DeferredModules]]: List of Module Records</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. <ins>[[DeferredModules]] is the list of modules imported through `export defer` that the binding resolution process needs to go through which need to be evaluated in order to have access to the resolved binding.</ins> Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
@@ -517,11 +517,12 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
-                Evaluate()
+                Evaluate(<ins>[_importedNames_]</ins>)
               </td>
               <td>
                 <p>Returns a promise for the evaluation of this module and its dependencies, resolving on successful evaluation or if it has already been evaluated successfully, and rejecting for an evaluation error or if it has already been evaluated unsuccessfully. If the promise is rejected, hosts are expected to handle the promise rejection and rethrow the evaluation error.</p>
-                <p>Link must have completed successfully prior to invoking this method.</p>
+                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names (or ~all~) whose additional modules need to be evaluated, for usage with GetOptionalIndirectExportsModuleRequests(). By default, modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are not evaluated.</ins></p>
+                <p>Link must have completed successfully prior to invoking this method<ins>, with an _importNames_ list that includes at least the _importedNames_ passed to Evaluate</ins>.</p>
               </td>
             </tr>
           </table>
@@ -531,6 +532,7 @@ contributors: Nicolò Ribaudo
           <h1>
             EvaluateModuleSync (
               _module_: a Module Record,
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
           <dl class="header">
@@ -539,8 +541,9 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. If ReadyForSyncExecution(_module_, « ») is *false*, throw a *TypeError* exception.
-            1. Let _promise_ be _module_.Evaluate().
+            1. <ins>If _importedNames_ is not present, let _importedNames_ be « ».</ins>
+            1. If ReadyForSyncExecution(_module_, <ins>_importedNames_</ins>) is *false*, throw a *TypeError* exception.
+            1. Let _promise_ be _module_.Evaluate(<ins>_importedNames_</ins>).
             1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
             1. If _promise_.[[PromiseState]] is ~rejected~, then
               1. If _promise_.[[PromiseIsHandled]] is *false*, perform HostPromiseRejectionTracker(_promise_, *"handle"*).
@@ -557,7 +560,11 @@ contributors: Nicolò Ribaudo
                 optional _seen_: a List of Module Records,
               ): a Boolean
             </h1>
-            <dl class="header"></dl>
+            <dl class="header">
+              <dt>description</dt>
+              <!-- &zwj; to prevent ecmarkup from wrapping this in a <p> -->
+              <dd>&zwj;<ins>It tests whether a given (_module_, _importedNames_) pair can be safely evaluated through EvaluateModuleSync.</ins></dd>
+            </dl>
             <emu-alg>
               1. If _module_ is not a Cyclic Module Record, return *true*.
               1. If _seen_ is not present, set _seen_ to a new empty List.
@@ -843,7 +850,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-LoadRequestedModules" type="concrete method">
           <h1>
             LoadRequestedModules (
-              <ins>_importedNames_: ~all~ or an empty List,</ins>
+              <ins>optional _importedNames_: ~all~ or an empty List,</ins>
               optional _hostDefined_: anything,
             ): a Promise
           </h1>
@@ -1061,7 +1068,11 @@ contributors: Nicolò Ribaudo
         </emu-clause>
 
         <emu-clause id="sec-moduleevaluation" type="concrete method">
-          <h1>Evaluate ( ): a Promise</h1>
+          <h1>
+            Evaluate (
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
+            ): a Promise
+          </h1>
           <dl class="header">
             <dt>for</dt>
             <dd>a Cyclic Module Record _module_</dd>
@@ -1073,6 +1084,7 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~.
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
+            1. <ins>If _importedNames_ is not present, let _importedNames_ be « ».</ins>
             1. <del>If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].</del>
             1. <del>If _module_.[[TopLevelCapability]] is not ~empty~, then</del>
               1. <del>Return _module_.[[TopLevelCapability]].[[Promise]].</del>
@@ -1103,6 +1115,18 @@ contributors: Nicolò Ribaudo
                 1. Assert: _stack_ is empty.
               1. <del>Return _capability_.[[Promise]].</del>
               1. <ins>Let _topLevelPromise_ be _capability_.[[Promise]].</ins>
+            1. <ins>If _topLevelPromise_.[[PromiseState]] is ~rejected~, return _topLevelPromise_.</ins>
+            1. <ins>Let _indirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_ ).</ins>
+            1. <ins>Let _promises_ be « _topLevelPromise_ ».</ins>
+            1. <ins>For each ModuleRequest Record _request_ of _indirectRequests_, do</ins>
+              1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
+              1. <ins>Assert: _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
+              1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_request_.[[ImportedNames]]).</ins>
+              1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
+              1. <ins>Append _innerPromise_ to _promises_.</ins>
+            1. <ins>If _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
+              1. <ins>NOTE: If all modules in the graph are synchronous, the usage of promises is an internal specification detail. In that case, we do not use PerformPromiseAll to keep returning an already settled promise.</ins>
+              1. <ins>Return ! PerformPromiseAll(CreateListIteratorRecord(_promises_), %Promise%, ! NewPromiseCapability(%Promise%), %Promise.resolve%).</ins>
             1. <ins>Return _topLevelPromise_.</ins>
           </emu-alg>
 
@@ -1561,7 +1585,7 @@ contributors: Nicolò Ribaudo
               1. For each ExportEntry Record _e_ of _module_.[[LocalExportEntries]], do
                 1. If _e_.[[ExportName]] is _exportName_, then
                   1. Assert: _module_ provides the direct binding for this export.
-                  1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]], <ins>[[DeferredModules]]: « »</ins> }.
+                  1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]] }.
               1. <ins>Let _allIndirectEntries_ be the list-concatenation of _module_.[[IndirectExportEntries]] and _module_.[[OptionalIndirectExportEntries]].</ins>
               1. For each ExportEntry Record _e_ of <del>_module_.[[IndirectExportEntries]]</del><ins>_allIndirectEntries_</ins>, do
                 1. If _e_.[[ExportName]] is _exportName_, then
@@ -1569,16 +1593,11 @@ contributors: Nicolò Ribaudo
                   1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
                   1. If _e_.[[ImportName]] is ~all~, then
                     1. Assert: _module_ does not provide the direct binding for this export.
-                    1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~, <ins>[[DeferredModules]]: « »</ins> }.
+                    1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
                   1. Else,
                     1. Assert: _module_ imports a specific binding for this export.
                     1. Assert: _e_.[[ImportName]] is a String.
-                    1. <del>Return _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).</del>
-                    1. <ins>Let _resolvedBinding_ be _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).</ins>
-                    1. <ins>If _resolvedBinding_ is a ResolvedBinding Record and _module_.[[OptionalIndirectExportEntries]] contains _e_, then</ins>
-                      1. <ins>Let _deferredModules_ be the list-concatenation of « _importedModule_ » and _resolvedBinding_.[[DeferredModules]].</ins>
-                      1. <ins>Return ResolvedBinding Record { [[Module]]: _resolvedBinding_.[[Module]], [[BindingName]]: _resolvedBinding_.[[BindingName]], [[DeferredModules]]: _deferredModules_ }.</ins>
-                    1. <ins>Return _resolvedBinding_.</ins>
+                    1. Return _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).
               1. If _exportName_ is *"default"*, then
                 1. Assert: A `default` export was not explicitly defined by this module.
                 1. Return *null*.
@@ -1598,8 +1617,6 @@ contributors: Nicolò Ribaudo
                     1. If _resolution_.[[Module]] and _starResolution_.[[Module]] are not the same Module Record, return ~ambiguous~.
                     1. If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]] and either _resolution_.[[BindingName]] or _starResolution_.[[BindingName]] is ~namespace~, return ~ambiguous~.
                     1. If _resolution_.[[BindingName]] is a String, _starResolution_.[[BindingName]] is a String, and _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
-                    1. <ins>Let _deferredModules_ be the list-concatenation of _starResolution_.[[DeferredModules]] and _resolution_.[[DeferredModules]].</ins>
-                    1. <ins>Set _starResolution_ to the ResolvedBinding Record { [[Module]]: _starResolution_.[[Module]], [[BindingName]]: _starResolution_.[[BindingName]], [[DeferredModules]]: _deferredModules_ }.</ins>
               1. Return _starResolution_.
             </emu-alg>
           </emu-clause>
