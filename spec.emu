@@ -1073,9 +1073,13 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~.
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
-            1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].
-            1. If _module_.[[TopLevelCapability]] is not ~empty~, then
-              1. Return _module_.[[TopLevelCapability]].[[Promise]].
+            1. <del>If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].</del>
+            1. <del>If _module_.[[TopLevelCapability]] is not ~empty~, then</del>
+              1. <del>Return _module_.[[TopLevelCapability]].[[Promise]].</del>
+            1. <ins>If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then</ins>
+              1. <ins>Assert: _module_.[[CycleRoot]].[[TopLevelCapability]] is not ~empty~.</ins>
+              1. <ins>Return _module_.[[CycleRoot]].[[TopLevelCapability]].[[Promise]].</ins>
+            1. <ins>Assert: _module_.[[CycleRoot]] and _module_.[[TopLevelCapability]] are ~empty~.</ins>
             1. Let _stack_ be a new empty List.
             1. Let _capability_ be ! NewPromiseCapability(%Promise%).
             1. Set _module_.[[TopLevelCapability]] to _capability_.
