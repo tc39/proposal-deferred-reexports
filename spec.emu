@@ -480,10 +480,11 @@ contributors: Nicolò Ribaudo
             </thead>
             <tr>
               <td>
-                LoadRequestedModules(<ins>_importedNames_,</ins> [_hostDefined_])
+                LoadRequestedModules([<ins>_importedNames_ [, </ins>_hostDefined_<ins>]</ins>])
               </td>
               <td>
                 <p>Prepares the module for linking by recursively loading all its dependencies, and returns a promise.</p>
+                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names (or ~all~) whose additional modules need to be loaded, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are loaded.</ins></p>
               </td>
             </tr>
             <tr>
@@ -507,11 +508,12 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
-                Link(<ins>_importedNames_</ins>)
+                Link(<ins>[_importedNames_]</ins>)
               </td>
               <td>
                 <p>Prepare the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>
-                <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
+                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names (or ~all~) whose additional modules need to be linked, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are linked.</ins></p>
+                <p>LoadRequestedModules must have completed successfully prior to invoking this method<ins>, with an _importNames_ list that includes at least the _importedNames_ passed to Link</ins>.</p>
               </td>
             </tr>
             <tr>
@@ -828,6 +830,7 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
+            1. <ins>If _importedNames_ is not present, let _importedNames_ be ~all~.</ins>
             1. If _hostDefined_ is not present, let _hostDefined_ be ~empty~.
             1. Let _pc_ be ! NewPromiseCapability(%Promise%).
             1. Let _state_ be the GraphLoadingState Record { [[IsLoading]]: *true*, [[PendingModulesCount]]: 1, [[Visited]]: « », [[PromiseCapability]]: _pc_, [[HostDefined]]: _hostDefined_ }.
@@ -919,7 +922,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-moduledeclarationlinking" type="concrete method" oldids="sec-moduledeclarationinstantiation">
           <h1>
             Link (
-              <ins>_importedNames_: ~all~ or a List of Strings,</ins>
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
           <dl class="header">
@@ -932,6 +935,7 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
+            1. <ins>If _importedNames_ is not present, let _importedNames_ be ~all~.</ins>
             1. Let _stack_ be a new empty List.
             1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0)).
             1. If _result_ is an abrupt completion, then
