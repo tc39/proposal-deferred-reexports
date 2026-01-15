@@ -45,7 +45,6 @@ contributors: Nicolò Ribaudo
           1. Let _binding_ be _m_.ResolveExport(_P_).
           1. Assert: _binding_ is a ResolvedBinding Record.
           1. <ins>For each Module Record _deferredModule_ of _binding_.[[DeferredModules]], do</ins>
-            1. <ins>If ReadyForSyncExecution(_deferredModule_) is *false*, throw a *TypeError* exception.</ins>
             1. <ins>Perform ? EvaluateModuleSync(_deferredModule_).</ins>
           1. Let _targetModule_ be _binding_.[[Module]].
           1. Assert: _targetModule_ is not *undefined*.
@@ -288,10 +287,10 @@ contributors: Nicolò Ribaudo
           1. Let _requests_ be the ModuleRequests of |ModuleItemList|.
           1. Let _additionalRequests_ be the ModuleRequests of |ModuleItem|.
           1. For each ModuleRequest Record _mr_ of _additionalRequests_, do
-            1. <del>If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</del>
+            1. <del>If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsKeyEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</del>
             1. <ins>Let _existingRequest_ be ~empty~.</ins>
             1. <ins>For each ModuleRequests Record _mr2_ of _requests_, do</ins>
-              1. <ins>If ModuleRequestsEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
+              1. <ins>If ModuleRequestsKeyEqual(_mr_, _mr2_) is *true* and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
                 1. <ins>Assert: _existingRequest_ is ~empty~.</ins>
                 1. <ins>Set _existingRequest_ to _mr2_.</ins>
             1. <ins>If _existingRequest_ is ~empty~, then</ins>
@@ -540,7 +539,7 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. Assert: _module_ is not a Cyclic Module Record.
+            1. If ReadyForSyncExecution(_module_) is *false*, throw a *TypeError* exception.
             1. Let _promise_ be _module_.Evaluate().
             1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
             1. If _promise_.[[PromiseState]] is ~rejected~, then
@@ -623,7 +622,7 @@ contributors: Nicolò Ribaudo
                 a List of LoadedModuleRequest Records
               </td>
               <td>
-                A map from the specifier strings used by the module represented by this record to request the importation of a module with the relative import attributes to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsEqual(_r1_, _r2_) is *true*.
+                A map from the specifier strings used by the module represented by this record to request the importation of a module with the relative import attributes to the resolved Module Record. The list does not contain two different Records _r1_ and _r2_ such that ModuleRequestsKeyEqual(_r1_, _r2_) is *true*.
               </td>
             </tr>
             <tr>
@@ -877,7 +876,7 @@ contributors: Nicolò Ribaudo
                   1. If AllImportAttributesSupported(_request_.[[Attributes]]) is *false*, then
                     1. Let _error_ be ThrowCompletion(a newly created *SyntaxError* object).
                     1. Perform ContinueModuleLoading(_state_, _error_, <ins>_request_.[[ImportedNames]]</ins>).
-                  1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _request_) is *true*, then
+                  1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsKeyEqual(_record_, _request_) is *true*, then
                     1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>_request_.[[ImportedNames]]</ins>).
                   1. Else,
                     1. Perform HostLoadImportedModule(_module_, _request_, _state_.[[HostDefined]], _state_).
@@ -1597,7 +1596,7 @@ contributors: Nicolò Ribaudo
                   1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
                   1. Let _existingRequest_ be ~empty~.
                   1. For each ModuleRequest Record _r_ in _requests_, do
-                    1. If _existingRequest_ is ~empty~ and ModuleRequestsEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
+                    1. If _existingRequest_ is ~empty~ and ModuleRequestsKeyEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
                       1. Set _existingRequest_ to _r_.
                   1. Let _newImportedNames_ be ~all~.
                   1. Assert: _oie_.[[ImportName]] is a String or ~all~.
@@ -1628,7 +1627,7 @@ contributors: Nicolò Ribaudo
         </dl>
         <emu-alg>
           1. If _result_ is a normal completion, then
-            1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _moduleRequest_) is *true*, then
+            1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsKeyEqual(_record_, _moduleRequest_) is *true*, then
               1. Assert: _record_.[[Module]] and _result_.[[Value]] are the same Module Record.
             1. Else,
               1. Append the LoadedModuleRequest Record { [[Specifier]]: _moduleRequest_.[[Specifier]], [[Attributes]]: _moduleRequest_.[[Attributes]], [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
