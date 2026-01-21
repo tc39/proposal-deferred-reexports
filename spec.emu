@@ -1234,8 +1234,12 @@ contributors: Nicolò Ribaudo
                   1. Append _requiredModule_ to _evaluationList_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Let _importedNames_ be _request_.[[ImportedNames]].
+                  1. Let _requestImportedNames_ be _importedNames_.
                   1. [id="step-BuildEvaluationList-reset-importedNames"] If _importedNames_ = ~all~, set _importedNames_ to « ».
                   1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
+                  1. If _requestImportedNames_ = ~all~, then
+                    1. Let _seen_ be a new empty List.
+                    1. Perform ListAppendUnique(_evaluationList_, InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _optionalIndirectRequests_, _seen_)).
                   1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_).
               1. Return ~unused~.
             </emu-alg>
