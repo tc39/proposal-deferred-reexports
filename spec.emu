@@ -902,8 +902,8 @@ contributors: Nicolò Ribaudo
                   1. <ins>If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
                   1. <del>Append _module_ to _state_.[[Visited]].</del>
                   1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: « » } to _state_.[[Visited]].</ins>
-                1. <ins>Let _indirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _state_.[[Visited]]).</ins>
-                1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _indirectRequests_.</ins>
+                1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _state_.[[Visited]]).</ins>
+                1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _optionalIndirectRequests_.</ins>
                 1. Let _requestedModulesCount_ be the number of elements in <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>.
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
                 1. For each ModuleRequest Record _request_ of <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>, do
@@ -979,8 +979,8 @@ contributors: Nicolò Ribaudo
               1. Return ? _result_.
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Assert: _stack_ is empty.
-            1. <ins>Let _indirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
-            1. <ins>For each ModuleRequest Record _request_ of _indirectRequests_, do</ins>
+            1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
+            1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
               1. <ins>If _requiredModule_.[[Status]] is ~unlinked~, perform ? _requiredModule_.Link(_request_.[[ImportedNames]]).</ins>
@@ -1060,8 +1060,8 @@ contributors: Nicolò Ribaudo
                     1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Let _indirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
-                  1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _indirectRequests_, _previouslyImportedNames_).
+                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
+                  1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
           </emu-clause>
@@ -1116,9 +1116,9 @@ contributors: Nicolò Ribaudo
               1. <del>Return _capability_.[[Promise]].</del>
               1. <ins>Let _topLevelPromise_ be _capability_.[[Promise]].</ins>
             1. <ins>If _topLevelPromise_.[[PromiseState]] is ~rejected~, return _topLevelPromise_.</ins>
-            1. <ins>Let _indirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_ ).</ins>
+            1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_ ).</ins>
             1. <ins>Let _promises_ be « _topLevelPromise_ ».</ins>
-            1. <ins>For each ModuleRequest Record _request_ of _indirectRequests_, do</ins>
+            1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
               1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_request_.[[ImportedNames]]).</ins>
@@ -1235,8 +1235,8 @@ contributors: Nicolò Ribaudo
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Let _importedNames_ be _request_.[[ImportedNames]].
                   1. [id="step-BuildEvaluationList-reset-importedNames"] If _importedNames_ = ~all~, set _importedNames_ to « ».
-                  1. Let _indirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
-                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _indirectRequests_).
+                  1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
+                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_).
               1. Return ~unused~.
             </emu-alg>
 
@@ -1317,8 +1317,8 @@ contributors: Nicolò Ribaudo
                 1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
                   1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_)).
-                  1. Let _indirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_request_.[[ImportedNames]]).
-                  1. Perform ListAppendUnique(_result_, InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _indirectRequests_, _seen_)).
+                  1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_request_.[[ImportedNames]]).
+                  1. Perform ListAppendUnique(_result_, InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _optionalIndirectRequests_, _seen_)).
                 1. Return _result_.
               </emu-alg>
             </emu-clause>
