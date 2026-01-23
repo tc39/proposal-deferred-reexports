@@ -1245,7 +1245,7 @@ contributors: Nicolò Ribaudo
             </emu-alg>
 
             <emu-note>
-              <p>Step <emu-xref href="#step-BuildEvaluationList-all-importedNames"></emu-xref> is true when there's `import *`. Only asynchronous transitive dependencies of moudules loaded through `export defer` are evaluated at this point, while synchronous dependecies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
+              <p>Step <emu-xref href="#step-BuildEvaluationList-all-importedNames"></emu-xref> is true when there's `import *`. For such case, only asynchronous transitive dependencies of modules loaded through `export defer` are evaluated at this point, while synchronous dependecies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
             </emu-note>
 
             <emu-note>
