@@ -1234,14 +1234,18 @@ contributors: Nicolò Ribaudo
                   1. Append _requiredModule_ to _evaluationList_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Let _importedNames_ be _request_.[[ImportedNames]].
-                  1. [id="step-BuildEvaluationList-reset-importedNames"] If _importedNames_ = ~all~, set _importedNames_ to « ».
-                  1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
-                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_).
+                  1. [id="step-BuildEvaluationList-all-importedNames"] If _importedNames_ = ~all~, then
+                    1. Let _allOptionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
+                    1. Let _seen_ be a new empty List.
+                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _allOptionalIndirectRequests_, _seen_)).
+                  1. Else,
+                    1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
+                    1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_).
               1. Return ~unused~.
             </emu-alg>
 
             <emu-note>
-              <p>Step <emu-xref href="#step-BuildEvaluationList-reset-importedNames"></emu-xref> empties _request_.[[ImportedNames]] when it's set to ~all~, so that `import *` does not cause the evaluation of modules loaded through `export defer`. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
+              <p>Step <emu-xref href="#step-BuildEvaluationList-all-importedNames"></emu-xref> is true when there's `import *`. For such case, only asynchronous transitive dependencies of modules loaded through `export defer` are evaluated at this point, while synchronous dependecies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
             </emu-note>
 
             <emu-note>
@@ -1294,13 +1298,13 @@ contributors: Nicolò Ribaudo
                 1. <del>For each Module Record _m_ of _additionalModules_, do</del>
                   1. <del>If _result_ does not contain _m_, append _m_ to _result_.</del>
               1. <del>Return _result_.</del>
-              1. <ins>Return InnerGatherAsynchronousTransitiveDependencies(_module_, _module_.[[RequestedModules]], _seen_).</ins>
+              1. <ins>Return GatherAsynchronousTransitiveDependenciesForRequests(_module_, _module_.[[RequestedModules]], _seen_).</ins>
             </emu-alg>
 
-            <emu-clause id="sec-InnerGatherAsynchronousTransitiveDependencies" type="abstract operation">
+            <emu-clause id="sec-GatherAsynchronousTransitiveDependenciesForRequests" type="abstract operation">
               <h1>
                 <ins>
-                  InnerGatherAsynchronousTransitiveDependencies (
+                  GatherAsynchronousTransitiveDependenciesForRequests (
                     _referrer_: a Cyclic Module Record,
                     _moduleRequests_: a List of ModuleRequest Records,
                     _seen_: a List of Module Records
@@ -1318,7 +1322,7 @@ contributors: Nicolò Ribaudo
                   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
                   1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_)).
                   1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_request_.[[ImportedNames]]).
-                  1. Perform ListAppendUnique(_result_, InnerGatherAsynchronousTransitiveDependencies(_requiredModule_, _optionalIndirectRequests_, _seen_)).
+                  1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_)).
                 1. Return _result_.
               </emu-alg>
             </emu-clause>
