@@ -1834,6 +1834,26 @@ contributors: Nicolò Ribaudo
           1. Let _importedName_ be the StringValue of |ModuleExportName|.
           1. Return « _importedName_ ».
         </emu-alg>
+        <emu-grammar>NamedExports : `{` `}`</emu-grammar>
+        <emu-alg>
+          1. Return « ».
+        </emu-alg>
+        <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _names1_ be the ImportedNames of |ExportsList|.
+          1. Let _names2_ be the ImportedNames of |ExportSpecifier|.
+          1. Return MergeImportedNames(_names1_, _names2_).
+        </emu-alg>
+        <emu-grammar>ExportSpecifier : ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Let _importedName_ be the StringValue of |ModuleExportName|.
+          1. Return « _importedName_ ».
+        </emu-alg>
+        <emu-grammar>ExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Let _importedName_ be the StringValue of the first |ModuleExportName|.
+          1. Return « _importedName_ ».
+        </emu-alg>
 
         <emu-clause id="sec-MergeImportedNames" type="abstract operation">
           <h1>
