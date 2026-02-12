@@ -465,7 +465,7 @@ contributors: Nicolò Ribaudo
             </tr>
           </table>
         </emu-table>
-        <emu-table id="table-abstract-methods-of-module-records" caption="Abstract Methods of Module Records" oldids="table-37">
+        <emu-table id="table-abstract-methods-of-module-records" type="abstract methods" of="Module Records" oldids="table-37">
           <table>
             <thead>
               <tr>
@@ -475,54 +475,89 @@ contributors: Nicolò Ribaudo
                 <th>
                   Purpose
                 </th>
+                <th>
+                  Definitions
+                </th>
               </tr>
             </thead>
-            <tr>
+            <tr id="abstract-loadrequestedmodules">
               <td>
-                LoadRequestedModules([<ins>_importedNames_ [, </ins>_hostDefined_<ins>]</ins>])
+                LoadRequestedModules (
+                  <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
+                  optional _hostDefined_: anything,
+                ): a Promise
               </td>
               <td>
-                <p>Prepares the module for linking by recursively loading all its dependencies, and returns a promise.</p>
-                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names (or ~all~) whose additional modules need to be loaded, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are loaded.</ins></p>
+                <p>It prepares the module for linking by recursively loading all its dependencies.</p>
+                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names whose additional modules need to be loaded, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are loaded.</ins></p>
+              </td>
+              <td>
+                Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+                <emu-concrete-method-dfns for="LoadRequestedModules"></emu-concrete-method-dfns>
               </td>
             </tr>
-            <tr>
+            <tr id="abstract-getexportednames">
               <td>
-                GetExportedNames([_exportStarSet_])
+                GetExportedNames (
+                  optional _exportStarSet_: a List of Source Text Module Records,
+                ): a List of Strings
               </td>
               <td>
-                <p>Return a list of all names that are either directly or indirectly exported from this module.</p>
+                <p>It returns a list of all names that are either directly or indirectly exported from this module.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
-            </tr>
-            <tr>
               <td>
-                ResolveExport(_exportName_ [, _resolveSet_])
+                Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+                <emu-concrete-method-dfns for="GetExportedNames"></emu-concrete-method-dfns>
+              </td>
+            </tr>
+            <tr id="abstract-resolveexport">
+              <td>
+                ResolveExport (
+                  _exportName_: a String,
+                  optional _resolveSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),
+                ): a ResolvedBinding Record, *null*, or ~ambiguous~
               </td>
               <td>
-                <p>Return the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. Return *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>It returns the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
-            </tr>
-            <tr>
               <td>
-                Link(<ins>[_importedNames_]</ins>)
+                Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+                <emu-concrete-method-dfns for="ResolveExport"></emu-concrete-method-dfns>
+              </td>
+            </tr>
+            <tr id="abstract-link">
+              <td>
+                Link (
+                  <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
+                ): either a normal completion containing ~unused~ or a throw completion
               </td>
               <td>
-                <p>Prepare the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>
-                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names (or ~all~) whose additional modules need to be linked, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are linked.</ins></p>
+                <p>It prepares the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>
+                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names whose additional modules need to be linked, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are linked.</ins></p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method<ins>, with an _importNames_ list that includes at least the _importedNames_ passed to Link</ins>.</p>
               </td>
-            </tr>
-            <tr>
               <td>
-                Evaluate(<ins>[_importedNames_]</ins>)
+                Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+                <emu-concrete-method-dfns for="Link"></emu-concrete-method-dfns>
+              </td>
+            </tr>
+            <tr id="abstract-evaluate">
+              <td>
+                Evaluate (
+                  <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
+                ): a Promise
               </td>
               <td>
-                <p>Returns a promise for the evaluation of this module and its dependencies, resolving on successful evaluation or if it has already been evaluated successfully, and rejecting for an evaluation error or if it has already been evaluated unsuccessfully. If the promise is rejected, hosts are expected to handle the promise rejection and rethrow the evaluation error.</p>
-                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names (or ~all~) whose additional modules need to be evaluated, for usage with GetOptionalIndirectExportsModuleRequests(). By default, modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are not evaluated.</ins></p>
+                <p>It returns a promise for the evaluation of this module and its dependencies, resolving on successful evaluation or if it has already been evaluated successfully, and rejecting for an evaluation error or if it has already been evaluated unsuccessfully. If the promise is rejected, hosts are expected to handle the promise rejection and rethrow the evaluation error. Unless this module is a Cyclic Module Record, the returned promise must be already settled.</p>
+                <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names whose additional modules need to be evaluated, for usage with GetOptionalIndirectExportsModuleRequests(). By default, modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are not evaluated.</ins></p>
                 <p>Link must have completed successfully prior to invoking this method<ins>, with an _importNames_ list that includes at least the _importedNames_ passed to Evaluate</ins>.</p>
+              </td>
+              <td>
+                Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+                <emu-concrete-method-dfns for="Evaluate"></emu-concrete-method-dfns>
               </td>
             </tr>
           </table>
@@ -728,7 +763,7 @@ contributors: Nicolò Ribaudo
           </table>
         </emu-table>
         <p>In addition to the methods defined in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref> Cyclic Module Records have the additional methods listed in <emu-xref href="#table-cyclic-module-methods"></emu-xref></p>
-        <emu-table id="table-cyclic-module-methods" caption="Additional Abstract Methods of Cyclic Module Records">
+        <emu-table id="table-cyclic-module-methods" type="abstract methods" of="Cyclic Module Records" caption="Additional Abstract Methods of Cyclic Module Records">
           <table>
             <thead>
               <tr>
@@ -738,35 +773,54 @@ contributors: Nicolò Ribaudo
                 <th>
                   Purpose
                 </th>
+                <th>
+                  Definitions
+                </th>
               </tr>
             </thead>
-            <tr>
+            <tr id="abstract-initializeenvironment">
+              <td>InitializeEnvironment ( ): either a normal completion containing ~unused~ or a throw completion</td>
               <td>
-                InitializeEnvironment()
+                It initializes the Environment Record of the module, including resolving all imported bindings, and creates the module's execution context.
               </td>
               <td>
-                Initialize the Environment Record of the module, including resolving all imported bindings, and create the module's execution context.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                ExecuteModule( [ _promiseCapability_ ] )
-              </td>
-              <td>
-                Evaluate the module's code within its execution context. If this module has *true* in [[HasTLA]], then a PromiseCapability Record is passed as an argument, and the method is expected to resolve or reject the given capability. In this case, the method must not throw an exception, but instead reject the PromiseCapability Record if necessary.
+                Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+                <emu-concrete-method-dfns for="InitializeEnvironment"></emu-concrete-method-dfns>
               </td>
             </tr>
-            <tr>
+            <tr id="abstract-executemodule">
               <td>
-                <ins>GetOptionalIndirectExportsModuleRequests( [ _importedNames_ ])</ins>
+                ExecuteModule (
+                  optional _capability_: a PromiseCapability Record,
+                ): either a normal completion containing ~unused~ or a throw completion
               </td>
               <td>
-                <p><ins>Returns a list of ModuleRequest Records describing the additional dependencies (not already listed in this module's [[RequestedModules]]) needed to be able to import _importedNames_ from this module. In case of a Source Text Module Record, these would be the dependencies specified through `export defer`. _importedNames_ is either ~all~ or a List of Strings.</ins></p>
+                It evaluates the module's code within its execution context. If this module has *true* in [[HasTLA]], then a PromiseCapability Record is passed as an argument, and the method is expected to resolve or reject the given capability. In this case, the method must not throw an exception, but instead reject the PromiseCapability Record if necessary.
+              </td>
+              <td>
+                Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
+                <emu-concrete-method-dfns for="ExecuteModule"></emu-concrete-method-dfns>
+              </td>
+            </tr>
+            <tr id="abstract-getoptionalindirectexportsmodulerequests">
+              <td>
+                <ins>
+                  GetOptionalIndirectExportsModuleRequests(
+                    optional _importedNames_: ~all~ or a List of Strings,
+                  ): a List of ModuleRequest Records
+                </ins>
+              </td>
+              <td>
+                <p><ins>It computes the Module Requests for the additional dependencies (not already listed in this module's [[RequestedModules]]) needed to be able to import _importedNames_ from this module. In case of a Source Text Module Record, these would be the dependencies specified through `export defer`.</ins></p>
 
                 <p><ins>This abstract method has the following default implementation:</ins></p>
                 <emu-alg>
                   1. <ins>Return a new empty List.</ins>
                 </emu-alg>
+              </td>
+              <td>
+                <ins>Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:</ins>
+                <emu-concrete-method-dfns for="GetOptionalIndirectExportsModuleRequests"></emu-concrete-method-dfns>
               </td>
             </tr>
           </table>
@@ -850,7 +904,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-LoadRequestedModules" type="concrete method">
           <h1>
             LoadRequestedModules (
-              <ins>optional _importedNames_: ~all~ or an empty List,</ins>
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
               optional _hostDefined_: anything,
             ): a Promise
           </h1>
@@ -1634,8 +1688,8 @@ contributors: Nicolò Ribaudo
           <emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="concrete method" number="3">
             <h1>
               <ins>
-                GetOptionalIndirectExportsModuleRequests (
-                  _importedNames_: ~all~ or a List of Strings,
+                GetOptionalIndirectExportsModuleRequests(
+                  optional _importedNames_: ~all~ or a List of Strings,
                 ): a List of ModuleRequest Records
               </ins>
             </h1>
