@@ -50,7 +50,8 @@ contributors: Nicolò Ribaudo
           1. Assert: _targetModule_ is not *undefined*.
           1. If _binding_.[[BindingName]] is ~namespace~, then
             1. Return GetModuleNamespace(_targetModule_, ~evaluation~).
-            1. NOTE: The phase here is always ~evaluation~ because in `import defer * as x from "..."; export { x }`, _binding_.[[BindingName]] is *"x"* and not ~namespace~.
+          1. If _binding_.[[BindingName]] is ~deferred-namespace~, then
+            1. Return GetModuleNamespace(_targetModule_, ~defer~).
           1. Let _targetEnv_ be _targetModule_.[[Environment]].
           1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
           1. Return ? _targetEnv_.GetBindingValue(_binding_.[[BindingName]], *true*).
@@ -517,7 +518,7 @@ contributors: Nicolò Ribaudo
                 ): a ResolvedBinding Record, *null*, or ~ambiguous~
               </td>
               <td>
-                <p>It returns the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>It returns the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ <ins>| ~deferred-namespace~</ins> }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~ <ins>or ~deferred-namespace~ (depending on whether the binding comes from a deferred import or not)</ins>. It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
