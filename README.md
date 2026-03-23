@@ -311,7 +311,7 @@ console.log('executed math');
 import * as math from "./math.js"; // Loads everything (both ./math.js and ./math/mul.js), no execution at all
 
 math.add; // Executes ./math/add.js, logs 'executed math'
-math.sub; // Executes ./match/sub.js
+math.sub; // Executes ./math/sub.js
 ```
 
-All dependencies are still loaded upfront.
+All dependencies are still loaded upfront, and deferred modules that use top-level await are pre-executed (like when using the `import defer` proposal alone), so that they are synchronously available upon request.
