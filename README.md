@@ -2,7 +2,7 @@
 
 ## Status
 
-Champion(s): _Nicolò Ribaudo_
+Champion(s): _Nicolò Ribaudo_, _Caio Lima_
 
 Author(s): _Nicolò Ribaudo_
 
