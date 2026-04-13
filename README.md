@@ -295,6 +295,20 @@ math.add; // Executes ./math/add.js
 math.sub; // Executes ./math/sub.js
 ```
 
+A similar de-optimization happens with `export * from`, which will cause all the optional dependencies used for exports other than `default` to be eagerly loaded:
+
+```js
+// math.js
+export defer { add as default } from "./math/add.js";
+export defer { sub } from "./math/sub.js";
+export { mul } from "./math/mul.js";
+```
+```js
+// index.js
+export * from "./math.js"; // Loads (./math.js, ./math/mul.js and ./math/add.js), does not load ./math/add.js
+```
+
+
 ### Integration with `import defer`
 
 The `import defer` proposal established that the `defer` keyword means "only execute this module when I actually need it", when using _namespace_ imports. When interacting with `export defer`, this allows for lazily executing the wrapper modules as well:
