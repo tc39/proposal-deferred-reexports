@@ -1178,8 +1178,8 @@ contributors: Nicolò Ribaudo
               1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
               1. <ins>Append _innerPromise_ to _promises_.</ins>
             1. <ins>If _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
-              1. <ins>NOTE: If all modules in the graph are synchronous, the usage of promises is an internal specification detail. In that case, we do not use PerformPromiseAll to keep returning an already settled promise.</ins>
-              1. <ins>Return ! PerformPromiseAll(CreateListIteratorRecord(_promises_), %Promise%, ! NewPromiseCapability(%Promise%), %Promise.resolve%).</ins>
+              1. <ins>NOTE: If all modules in the graph are synchronous, the usage of promises is an internal specification detail. In that case, we do not use SafePerformPromiseAll to keep returning an already settled promise.</ins>
+              1. <ins>Return SafePerformPromiseAll(CreateListIteratorRecord(_promises_)).</ins>
             1. <ins>Return _topLevelPromise_.</ins>
           </emu-alg>
 
