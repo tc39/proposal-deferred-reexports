@@ -28,8 +28,8 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-module-environment-records-getbindingvalue-n-s" type="concrete method">
           <h1>
             GetBindingValue (
-              _N_: a String,
-              _S_: a Boolean,
+              _name_: a String,
+              _strict_: a Boolean,
             ): either a normal completion containing an ECMAScript language value or a throw completion
           </h1>
           <dl class="header">
@@ -37,27 +37,27 @@ contributors: Nicolò Ribaudo
             <dd>a Module Environment Record _envRec_</dd>
 
             <dt>description</dt>
-            <dd>It returns the value of its bound identifier whose name is _N_. However, if the binding is an indirect binding the value of the target binding is returned. If the binding exists but is uninitialized a *ReferenceError* is thrown.</dd>
+            <dd>It returns the value of its bound identifier whose name is _name_. However, if the binding is an indirect binding the value of the target binding is returned. If the binding exists but is uninitialized a *ReferenceError* is thrown.</dd>
           </dl>
           <emu-alg>
-            1. Assert: _S_ is *true*.
-            1. Assert: _envRec_ has a binding for _N_.
-            1. If the binding for _N_ is an indirect binding, then
-              1. Let _M_ and _N2_ be the indirection values provided when this binding for _N_ was created.
-              1. Let _targetEnv_ be _M_.[[Environment]].
+            1. Assert: _strict_ is *true*.
+            1. Assert: _envRec_ has a binding for _name_.
+            1. If the binding for _name_ is an indirect binding, then
+              1. Let _module_ and _targetName_ be the indirection values provided when this binding for _name_ was created.
+              1. Let _targetEnv_ be _module_.[[Environment]].
               1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
-              1. Return ? <emu-meta effects="user-code">_targetEnv_.GetBindingValue(_N2_, *true*)</emu-meta>.
-            1. If the binding for _N_ in _envRec_ is an uninitialized binding, then
-              1. <ins>If the binding for _N_ in _envRec_ is a deferred initialization binding, then</ins>
-                1. <ins>Let _initializationSteps_ be the deferred initialization steps provided for _N_ when this binding was created.</ins>
+              1. Return ? <emu-meta effects="user-code">_targetEnv_.GetBindingValue(_targetName_, *true*)</emu-meta>.
+            1. If the binding for _name_ in _envRec_ is an uninitialized binding, then
+              1. <ins>If the binding for _name_ in _envRec_ is a deferred initialization binding, then</ins>
+                1. <ins>Let _initializationSteps_ be the deferred initialization steps provided for _name_ when this binding was created.</ins>
                 1. <ins>Let _value_ be _initializationSteps_().</ins>
-                1. <ins>Perform ! _envRec_.InitializeBinding(_N_, _value_).</ins>
+                1. <ins>Perform ! _envRec_.InitializeBinding(_name_, _value_).</ins>
               1. <ins>Else,</ins>
                 1. Throw a *ReferenceError* exception.
-            1. Return the value currently bound to _N_ in _envRec_.
+            1. Return the value currently bound to _name_ in _envRec_.
           </emu-alg>
           <emu-note>
-            <p>_S_ will always be *true* because a |Module| is always strict mode code.</p>
+            <p>_strict_ will always be *true* because a |Module| is always strict mode code.</p>
           </emu-note>
         </emu-clause>
 
@@ -66,18 +66,18 @@ contributors: Nicolò Ribaudo
             <ins>
               CreateDeferredInitializationBinding (
                 _envRec_: a Module Environment Record,
-                _N_: a String,
+                _name_: a String,
                 _initializationSteps_: an Abstract Closure that takes no arguments and returns an ECMAScript language value
               ): ~unused~
             </ins>
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd>It creates a <dfn>deferred initialization binding</dfn> (a binding that is automatically initialized on first access) for the name _N_. A binding must not already exist in _envRec_ for _N_.</dd>
+            <dd>It creates a <dfn>deferred initialization binding</dfn> (a binding that is automatically initialized on first access) for the name _name_. A binding must not already exist in _envRec_ for _name_.</dd>
           </dl>
           <emu-alg>
-            1. Assert: _envRec_ does not already have a binding for _N_.
-            1. Create an imutable deferred initialization binding in _envRec_ for _N_ whose deferred initialization steps is _initializationSteps_, and record that the binding is uninitialized and that it is a strict binding.
+            1. Assert: _envRec_ does not already have a binding for _name_.
+            1. Create an imutable deferred initialization binding in _envRec_ for _name_ whose deferred initialization steps is _initializationSteps_, and record that the binding is uninitialized and that it is a strict binding.
             1. Return ~unused~.
           </emu-alg>
         </emu-clause>
@@ -2223,158 +2223,6 @@ contributors: Nicolò Ribaudo
           </emu-alg>
         </emu-clause>
 
-        <emu-clause id="sec-source-text-module-record-initialize-environment" type="concrete method" number="4">
-          <h1>InitializeEnvironment ( ): either a normal completion containing ~unused~ or a throw completion</h1>
-          <dl class="header">
-            <dt>for</dt>
-            <dd>a Source Text Module Record _module_</dd>
-          </dl>
-
-          <emu-alg>
-            1. <del>For each ExportEntry Record _e_ of _module_.[[IndirectExportEntries]], do</del>
-              1. <del>Let _resolution_ be _module_.ResolveExport(_e_.[[ExportName]]).</del>
-              1. <del>If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.</del>
-              1. <del>Assert: _resolution_ is a ResolvedBinding Record.</del>
-            1. [declared="e"] <ins>Let _indirectExportNames_ be a List whose elements are the values of _e_.[[ExportName]] for each _e_ of _module_.[[IndirectExportEntries]].</ins>
-            1. <ins>Perform ? EnsureResolvableBindings(_module_, _indirectExportNames_).</ins>
-            1. Assert: All named exports from _module_ are resolvable.
-            1. Let _realm_ be _module_.[[Realm]].
-            1. Assert: _realm_ is not *undefined*.
-            1. Let _env_ be NewModuleEnvironment(_realm_.[[GlobalEnv]]).
-            1. Set _module_.[[Environment]] to _env_.
-            1. For each ImportEntry Record _in_ of _module_.[[ImportEntries]], do
-              1. Let _importedModule_ be GetImportedModule(_module_, _in_.[[ModuleRequest]]).
-              1. If _in_.[[ImportName]] is ~namespace-object~, then
-                1. Let _namespace_ be GetModuleNamespace(_importedModule_, _in_.[[ModuleRequest]].[[Phase]], <ins>~all~</ins>).
-                1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
-                1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
-              1. <ins>If _in_.[[ImportName]] is ~filtered-namespace-object~, then</ins>
-                1. <ins>Perform ? EnsureResolvableBindings(_importedModule_, _in_.[[NamespaceNamesFilter]]).</ins>
-                1. <ins>Let _namespace_ be GetModuleNamespace(_importedModule_, _in_.[[ModuleRequest]].[[Phase]], _in_.[[NamespaceNamesFilter]]).</ins>
-                1. <ins>Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).</ins>
-                1. <ins>Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).</ins>
-              1. Else,
-                1. Let _resolution_ be _importedModule_.ResolveExport(_in_.[[ImportName]]).
-                1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-                1. If _resolution_.[[BindingName]] is ~namespace~ or ~deferred-namespace~, then
-                  1. If _resolution_.[[BindingName]] is ~namespace~, let _phase_ be ~evaluation~, else let _phase_ be ~defer~.
-                  1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], _phase_, <ins>~all~</ins>).
-                  1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
-                  1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
-                1. Else,
-                  1. Perform CreateImportBinding(_env_, _in_.[[LocalName]], _resolution_.[[Module]], _resolution_.[[BindingName]]).
-            1. <ins>For each ExportEntry Record _ie_ of _module_.[[IndirectExportEntries]], do</ins>
-              1. <ins>If _ie_.[[ImportName]] is ~filtered-namespace~, then</ins>
-                1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _ie_.[[ExportName]], and *"\*"*.</ins>
-                1. <ins>Let _importedModule_ be GetImportedModule(_module_, _ie_.[[ModuleRequest]]).</ins>
-                1. <ins>Perform ? EnsureResolvableBindings(_importedModule_, _ie_.[[NamespaceNamesFilter]]).</ins>
-                1. <ins>Let _filteredNamespace_ be be GetModuleNamespace(_importedModule_, _ie_.[[ModuleRequest]].[[Phase]], _ie_.[[NamespaceNamesFilter]]).</ins>
-                1. <ins>Perform ! _env_.CreateImmutableBinding(_localName_, *true*).</ins>
-                1. <ins>Perform ! _env_.InitializeBinding(_localName_, _filteredNamespace_).</ins>
-            1. <ins>For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do</ins>
-              1. <ins>If _oie_.[[ImportName]] is ~filtered-namespace~, then</ins>
-                1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _oie_.[[ExportName]], and *"\*"*.</ins>
-                1. <ins>Let _initializationSteps_ be a new Abstract Closure with no parameters that captures _module_ and _oie_ and performs the following steps when called:</ins>
-                  1. <ins>Let _importedModule_ be GetImportedModule(_module_, _oie_.[[ModuleRequest]]).</ins>
-                  1. <span style="background-color: yellow;">TODO: Figure out where to call EnsureResolvableBindings. Not here, as this is meant to be free from side effects.</span>
-                  1. <ins>Return GetModuleNamespace(_importedModule_, _oie_.[[ModuleRequest]].[[Phase]], _oie_.[[NamespaceNamesFilter]]).</ins>
-                1. <ins>Perform CreateDeferredInitializationBinding(_env_, _localName_, _initializationSteps_).</ins>
-                1. <ins>NOTE: The _localName_ binding of `export defer { ...} as ns from "mod"` is initialized on first access, as whether the corresponding module is available or not depends on _module_'s importers.</ins>
-            1. Let _moduleContext_ be a new ECMAScript code execution context.
-            1. Set the Function of _moduleContext_ to *null*.
-            1. Assert: _module_.[[Realm]] is not *undefined*.
-            1. Set the Realm of _moduleContext_ to _module_.[[Realm]].
-            1. Set the ScriptOrModule of _moduleContext_ to _module_.
-            1. Set the VariableEnvironment of _moduleContext_ to _module_.[[Environment]].
-            1. Set the LexicalEnvironment of _moduleContext_ to _module_.[[Environment]].
-            1. Set the PrivateEnvironment of _moduleContext_ to *null*.
-            1. Set _module_.[[Context]] to _moduleContext_.
-            1. Push _moduleContext_ onto the execution context stack; _moduleContext_ is now the running execution context.
-            1. Let _code_ be _module_.[[ECMAScriptCode]].
-            1. Let _varDeclarations_ be the VarScopedDeclarations of _code_.
-            1. Let _declaredVarNames_ be a new empty List.
-            1. For each element _d_ of _varDeclarations_, do
-              1. For each element _dn_ of the BoundNames of _d_, do
-                1. If _declaredVarNames_ does not contain _dn_, then
-                  1. Perform ! _env_.CreateMutableBinding(_dn_, *false*).
-                  1. Perform ! _env_.InitializeBinding(_dn_, *undefined*).
-                  1. Append _dn_ to _declaredVarNames_.
-            1. Let _lexDeclarations_ be the LexicallyScopedDeclarations of _code_.
-            1. Let _privateEnv_ be *null*.
-            1. For each element _d_ of _lexDeclarations_, do
-              1. For each element _dn_ of the BoundNames of _d_, do
-                1. If IsConstantDeclaration of _d_ is *true*, then
-                  1. Perform ! _env_.CreateImmutableBinding(_dn_, *true*).
-                1. Else,
-                  1. Perform ! _env_.CreateMutableBinding(_dn_, *false*).
-                1. If _d_ is either a |FunctionDeclaration|, a |GeneratorDeclaration|, an |AsyncFunctionDeclaration|, or an |AsyncGeneratorDeclaration|, then
-                  1. Let _fo_ be InstantiateFunctionObject of _d_ with arguments _env_ and _privateEnv_.
-                  1. Perform ! _env_.InitializeBinding(_dn_, _fo_).
-            1. Remove _moduleContext_ from the execution context stack.
-            1. Return ~unused~.
-          </emu-alg>
-
-          <emu-clause id="sec-ensureresolvablebindings" type="abstract operation">
-            <h1>
-              <ins>
-                EnsureResolvableBindings (
-                  _module_: a Module Record,
-                  _names_: a List of Strings,
-                ): either a normal completion containing ~unused~, or a throw completion
-              </ins>
-            </h1>
-            <dl class="header">
-              <dt>description</dt>
-              <dd>It throws an error if _module_ does not have unabiguous exports for all _names_.</dd>
-            </dl>
-            <emu-alg>
-              1. For each element _name_ of _names_, do
-                1. Let _resolution_ be _module_.ResolveExport(_names_).
-                1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-                1. Assert: _resolution_ is a ResolvedBinding Record.
-              1. Return ~unused~.
-            </emu-alg>
-          </emu-clause>
-        </emu-clause>
-
-        <emu-clause id="sec-getmodulenamespace" type="abstract operation" number="13">
-          <h1>
-            GetModuleNamespace (
-              _module_: an instance of a concrete subclass of Module Record,
-              _phase_: ~defer~ or ~evaluation~,
-              <ins>_importedNames_: ~all~ or a List of Strings</ins>
-            ): a Module Namespace Object
-          </h1>
-          <dl class="header">
-            <dt>description</dt>
-            <dd>It retrieves the Module Namespace Object representing _module_'s exports, lazily creating it the first time it was requested, and <ins>if _importedNames_ is ~all~</ins> storing it in _module_.[[Namespace]] for future retrieval.</dd>
-          </dl>
-
-          <emu-alg>
-            1. Assert: If _module_ is a Cyclic Module Record, then _module_.[[Status]] is not ~new~ or ~unlinked~.
-            1. <ins>Let _namespace_ be ~empty~.</ins>
-            1. <ins>If _importedNames_ is ~all~, then</ins>
-              1. If _phase_ is ~defer~, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[DeferredNamespace]].
-              1. Else, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[Namespace]].
-            1. If _namespace_ is ~empty~, then
-              1. Let _exportedNames_ be _module_.GetExportedNames().
-              1. Let _unambiguousNames_ be a new empty List.
-              1. For each element _name_ of _exportedNames_, do
-                1. <ins>If _importedNames_ is ~all~ or, _importedNames_ contains _name_, then</ins>
-                  1. If _phase_ is not ~defer~ or _name_ is not *"then"*, then
-                    1. Let _resolution_ be _module_.ResolveExport(_name_).
-                    1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
-              1. Set _namespace_ to ModuleNamespaceCreate(_module_, _unambiguousNames_, _phase_).
-              1. <ins>If _importedNames_ is ~all~, then</ins>
-                1. <ins>If _phase_ is ~defer~, set _module_.[[DeferredNamespace]] to _namespace_.</ins>
-                1. <ins>Else, set _module_.[[Namespace]] to _namespace_.</ins>
-            1. Return _namespace_.
-          </emu-alg>
-          <emu-note>
-            <p>GetModuleNamespace never throws. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.</p>
-          </emu-note>
-        </emu-clause>
-
         <emu-clause id="sec-source-text-module-record-module-record-methods">
           <h1>Implementation of Module Record Abstract Methods</h1>
 
@@ -2519,14 +2367,15 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. For each ExportEntry Record _e_ of _module_.[[IndirectExportEntries]], do
-                1. Let _resolution_ be _module_.ResolveExport(_e_.[[ExportName]]).
-                1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-                1. Assert: _resolution_ is a ResolvedBinding Record.
+                1. <del>Let _resolution_ be _module_.ResolveExport(_e_.[[ExportName]]).</del>
+                1. <del>If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.</del>
+                1. <del>Assert: _resolution_ is a ResolvedBinding Record.</del>
+                1. <ins>Perform ? EnsureResolvableBinding(_module_, _e_.[[ExportName]], ~disallow-ambiguous~).</ins>
               1. <ins>For each ExportEntry Record _e_ of _module_.[[StarExportEntries]], do</ins>
                 1. <ins>Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).</ins>
                 1. <ins>For each String _name_ of _importedModule_.GetExportedNames(), do</ins>
                   1. <ins>NOTE: All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*.</ins>
-                  1. <ins>If _name_ is not *"default"* and _importedModule_.ResolveExport(_name_) is *null*, throw a *SyntaxError* exception.</ins>
+                  1. <ins>If _name_ is not *"default"*, perform ? EnsureResolvableBinding(_importedModule_, _name_, ~disallow-ambiguous~).</ins>
               1. Assert: All named exports from _module_ are resolvable.
               1. Let _realm_ be _module_.[[Realm]].
               1. Assert: _realm_ is not *undefined*.
@@ -2537,20 +2386,42 @@ contributors: Nicolò Ribaudo
                 1. If _in_.[[ImportName]] is ~namespace-object~, then
                   1. <ins>For each String _name_ of _importedModule_.GetExportedNames(), do</ins>
                     1. <ins>NOTE: All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*.</ins>
-                    1. <ins>If _importedModule_.ResolveExport(_name_) is *null*, throw a *SyntaxError* exception.</ins>
-                  1. Let _namespace_ be GetModuleNamespace(_importedModule_, _in_.[[ModuleRequest]].[[Phase]]).
+                    1. <ins>Perform ? EnsureResolvableBinding(_importedModule_, _name_, ~allow-ambiguous~).</ins>
+                  1. Let _namespace_ be GetModuleNamespace(_importedModule_, _in_.[[ModuleRequest]].[[Phase]], <ins>~all~</ins>).
                   1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
                   1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
+                1. <ins>Else if _in_.[[ImportName]] is ~filtered-namespace-object~, then</ins>
+                  1. <ins>For each String _name_ of _in_.[[NamespaceNamesFilter]], perform ? EnsureResolvableBinding(_importedModule_, _name_, ~disallow-ambiguous~).</ins>
+                  1. <ins>Let _namespace_ be GetModuleNamespace(_importedModule_, _in_.[[ModuleRequest]].[[Phase]], _in_.[[NamespaceNamesFilter]]).</ins>
+                  1. <ins>Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).</ins>
+                  1. <ins>Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).</ins>
                 1. Else,
                   1. Let _resolution_ be _importedModule_.ResolveExport(_in_.[[ImportName]]).
                   1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
                   1. If _resolution_.[[BindingName]] is ~namespace~ or ~deferred-namespace~, then
                     1. If _resolution_.[[BindingName]] is ~namespace~ let _phase_ be ~evaluation~, else let _phase_ be ~defer~.
-                    1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], _phase_).
+                    1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], _phase_, <ins>~all~</ins>).
                     1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
                     1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
                   1. Else,
                     1. Perform CreateImportBinding(_env_, _in_.[[LocalName]], _resolution_.[[Module]], _resolution_.[[BindingName]]).
+              1. <ins>For each ExportEntry Record _ie_ of _module_.[[IndirectExportEntries]], do</ins>
+                1. <ins>If _ie_.[[ImportName]] is ~filtered-namespace~, then</ins>
+                  1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _ie_.[[ExportName]], and *"\*"*.</ins>
+                  1. <ins>Let _importedModule_ be GetImportedModule(_module_, _ie_.[[ModuleRequest]]).</ins>
+                  1. <ins>For each String _name_ of _ie_.[[NamespaceNamesFilter]], perform ? EnsureResolvableBinding(_importedModule_, _name_, ~disallow-ambiguous~).</ins>
+                  1. <ins>Let _filteredNamespace_ be be GetModuleNamespace(_importedModule_, _ie_.[[ModuleRequest]].[[Phase]], _ie_.[[NamespaceNamesFilter]]).</ins>
+                  1. <ins>Perform ! _env_.CreateImmutableBinding(_localName_, *true*).</ins>
+                  1. <ins>Perform ! _env_.InitializeBinding(_localName_, _filteredNamespace_).</ins>
+              1. <ins>For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do</ins>
+                1. <ins>If _oie_.[[ImportName]] is ~filtered-namespace~, then</ins>
+                  1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _oie_.[[ExportName]], and *"\*"*.</ins>
+                  1. <ins>Let _initializationSteps_ be a new Abstract Closure with no parameters that captures _module_ and _oie_ and performs the following steps when called:</ins>
+                    1. <ins>Let _importedModule_ be GetImportedModule(_module_, _oie_.[[ModuleRequest]]).</ins>
+                    1. <span style="background-color: yellow;">TODO: Figure out where to call EnsureResolvableBinding. Not here, as this is meant to be free from side effects.</span>
+                    1. <ins>Return GetModuleNamespace(_importedModule_, _oie_.[[ModuleRequest]].[[Phase]], _oie_.[[NamespaceNamesFilter]]).</ins>
+                  1. <ins>Perform CreateDeferredInitializationBinding(_env_, _localName_, _initializationSteps_).</ins>
+                  1. <ins>NOTE: The _localName_ binding of `export defer { ...} as ns from "mod"` is initialized on first access, as whether the corresponding module is available or not depends on _module_'s importers.</ins>
               1. Let _moduleContext_ be a new ECMAScript code execution context.
               1. Set the Function of _moduleContext_ to *null*.
               1. Assert: _module_.[[Realm]] is not *undefined*.
@@ -2584,6 +2455,30 @@ contributors: Nicolò Ribaudo
               1. Remove _moduleContext_ from the execution context stack.
               1. Return ~unused~.
             </emu-alg>
+
+            <emu-clause id="sec-ensureresolvablebinding" type="abstract operation">
+              <h1>
+                <ins>
+                  EnsureResolvableBinding (
+                    _module_: a Module Record,
+                    _name_: a String,
+                    _onAmbiguous_: ~allow-ambiguous~ or ~disallow-ambiguous~,
+                  ): either a normal completion containing ~unused~, or a throw completion
+                </ins>
+              </h1>
+              <dl class="header">
+                <dt>description</dt>
+                <dd>It throws an error if _module_ does not have unabiguous exports for all _names_.</dd>
+              </dl>
+              <emu-alg>
+                1. Let _resolution_ be _module_.ResolveExport(_names_).
+                1. If _resolution_ is *null*, throw a *SyntaxError* exception.
+                1. If _onAmbiguous_ is ~disallow-ambiguous~, then
+                  1. If _resolution_ is ~ambiguous~, throw a *SyntaxError* exception.
+                  1. Assert: _resolution_ is a ResolvedBinding Record.
+                1. Return ~unused~.
+              </emu-alg>
+            </emu-clause>
           </emu-clause>
 
           <emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="concrete method" number="3">
@@ -2648,6 +2543,44 @@ contributors: Nicolò Ribaudo
             1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]]).
           1. Return ~unused~.
         </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-getmodulenamespace" type="abstract operation" number="13">
+        <h1>
+          GetModuleNamespace (
+            _module_: an instance of a concrete subclass of Module Record,
+            _phase_: ~defer~ or ~evaluation~,
+            <ins>_importedNames_: ~all~ or a List of Strings</ins>
+          ): a Module Namespace Object
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd>It retrieves the Module Namespace Object representing _module_'s exports, lazily creating it the first time it was requested, and <ins>if _importedNames_ is ~all~</ins> storing it in _module_.[[Namespace]] for future retrieval.</dd>
+        </dl>
+
+        <emu-alg>
+          1. Assert: If _module_ is a Cyclic Module Record, then _module_.[[Status]] is not ~new~ or ~unlinked~.
+          1. <ins>Let _namespace_ be ~empty~.</ins>
+          1. <ins>If _importedNames_ is ~all~, then</ins>
+            1. If _phase_ is ~defer~, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[DeferredNamespace]].
+            1. Else, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[Namespace]].
+          1. If _namespace_ is ~empty~, then
+            1. Let _exportedNames_ be _module_.GetExportedNames().
+            1. Let _unambiguousNames_ be a new empty List.
+            1. For each element _name_ of _exportedNames_, do
+              1. <ins>If _importedNames_ is ~all~ or, _importedNames_ contains _name_, then</ins>
+                1. If _phase_ is not ~defer~ or _name_ is not *"then"*, then
+                  1. Let _resolution_ be _module_.ResolveExport(_name_).
+                  1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
+            1. Set _namespace_ to ModuleNamespaceCreate(_module_, _unambiguousNames_, _phase_).
+            1. <ins>If _importedNames_ is ~all~, then</ins>
+              1. <ins>If _phase_ is ~defer~, set _module_.[[DeferredNamespace]] to _namespace_.</ins>
+              1. <ins>Else, set _module_.[[Namespace]] to _namespace_.</ins>
+          1. Return _namespace_.
+        </emu-alg>
+        <emu-note>
+          <p>GetModuleNamespace never throws. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.</p>
+        </emu-note>
       </emu-clause>
     </emu-clause>
 
@@ -2914,7 +2847,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return ~all-but-default~.
         </emu-alg>
-        <emu-grammar>ExportFromClause : NamedNamespaceExport</emu-grammar>
+        <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
         <emu-alg>
           1. Return ~all~.
         </emu-alg>
