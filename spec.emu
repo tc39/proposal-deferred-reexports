@@ -2275,7 +2275,7 @@ contributors: Nicolò Ribaudo
               ResolveExport (
                 _exportName_: a String,
                 optional _resolveSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),
-                <ins>optional _deferNamespaceExportSet_: a List of Module Records</ins>
+                <ins>optional _deferNamespaceExportSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String)</ins>
               ): a ResolvedBinding Record, *null*, or ~ambiguous~
             </h1>
             <dl class="header">
@@ -2293,10 +2293,11 @@ contributors: Nicolò Ribaudo
               1. Assert: _module_.[[Status]] is not ~new~.
               1. If _resolveSet_ is not present, set _resolveSet_ to a new empty List.
               1. <ins>If _deferNamespaceExportSet_ is not present, set _deferNamespaceExportSet_ to a new empty List.</ins>
-              1. For each Record { [[Module]], [[ExportName]] } _r_ of _resolveSet_, do
-                1. If _module_ and _r_.[[Module]] are the same Module Record and _exportName_ is _r_.[[ExportName]], then
-                  1. Assert: This is a circular import request.
-                  1. Return *null*.
+              1. <del>For each Record { [[Module]], [[ExportName]] } _r_ of _resolveSet_, do</del>
+                1. <del>If _module_ and _r_.[[Module]] are the same Module Record and _exportName_ is _r_.[[ExportName]], then</del>
+              1. <ins>If ResolveSetContains(_resolveSet_, _module_, _exportName_) is *true*, then</ins>
+                1. Assert: This is a circular import request.
+                1. Return *null*.
               1. Append the Record { [[Module]]: _module_, [[ExportName]]: _exportName_ } to _resolveSet_.
               1. For each ExportEntry Record _e_ of _module_.[[LocalExportEntries]], do
                 1. If _e_.[[ExportName]] is _exportName_, then
@@ -2310,17 +2311,15 @@ contributors: Nicolò Ribaudo
                   1. If _e_.[[ImportName]] is ~all~, then
                     1. Assert: _module_ does not provide the direct binding for this export.
                     1. <ins>Assert: _e_.[[NamespaceNamesFilter]] is ~empty~.</ins>
-                    1. <ins>If _module_.[[OptionalIndirectExportEntries]] contains _e_ and _deferNamespaceExportSet_ does not contain _importedModule_, then</ins>
-                      1. <ins>Append _importedModule_ to _deferNamespaceExportSet_.</ins>
-                      1. <ins>For each String _name_ of _importedModule_.GetExportedNames(), do</ins>
-                        1. <ins>Let _resolution_ be _importedModule_.ResolveExport(_name_, « », _deferNamespaceExportSet_).</ins>
-                        1. <ins>If _resolution_ is *null*, return *null*.</ins>
+                    1. <ins>If _module_.[[OptionalIndirectExportEntries]] contains _e_ and NamespaceMemberIsUnresolvableOptional(_deferNamespaceExportSet_, _module_, _exportName_, _importedModule_, _importedModule_.GetExportedNames(), ~allow-ambiguous~) is *true*, return *null*.</ins>
                     1. If _e_.[[ModuleRequest]].[[Phase]] is ~defer~, then
                       1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~ }.
                     1. Else,
                       1. Assert: _e_.[[Phase]] is ~evaluation~.
                       1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
                   1. <ins>Else if _e_.[[ImportName]] is ~filtered-namespace~, then</ins>
+                    1. <ins>Assert: _e_.[[NamespaceNamesFilter]] is a List of Strings.</ins>
+                    1. <ins>If _module_.[[OptionalIndirectExportEntries]] contains _e_ and NamespaceMemberIsUnresolvableOptional(_deferNamespaceExportSet_, _module_, _exportName_, _importedModule_, _e_.[[NamespaceNamesFilter]], ~disallow-ambiguous~) is *true*, return *null*.</ins>
                     1. <ins>NOTE: `export { ... } as ns from "mod"` introduces a local internal binding in the module that contains the |ExportDeclaration|. That binding is created by <emu-xref href="#sec-source-text-module-record-initialize-environment">InitializeEnvironment</emu-xref>.</ins>
                     1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _exportName_, and *"\*"*.</ins>
                     1. <ins>Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _localName_ }.</ins>
@@ -2350,6 +2349,54 @@ contributors: Nicolò Ribaudo
                     1. If _resolution_.[[BindingName]] is a String, _starResolution_.[[BindingName]] is a String, and _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
               1. Return _starResolution_.
             </emu-alg>
+
+            <emu-clause id="sec-ResolveSetContains" type="abstract operation">
+              <h1>
+                <ins>
+                  ResolveSetContains (
+                    _resolveSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),
+                    _module_: a Module Record,
+                    _exportName_: a String,
+                  ): a Boolean
+                </ins>
+              </h1>
+              <dl class="header">
+                <dt>description</dt>
+                <dd>It checks whether _resolveSet_ contains a Record whose [[Module]] is _module_ and whose [[ExportName]] is _exportName_.</dd>
+              </dl>
+              <emu-alg>
+                1. For each Record { [[Module]], [[ExportName]] } _r_ of _resolveSet_, do
+                  1. If _r_.[[Module]] is _module_ and _r_.[[ExportName]] is _exportName_, then
+                    1. Return *true*.
+                1. Return *false*.
+              </emu-alg>
+            </emu-clause>
+
+            <emu-clause id="sec-NamespaceMemberIsUnresolvableOptional" type="abstract operation">
+              <h1>
+                <ins>
+                  NamespaceMemberIsUnresolvableOptional (
+                    _deferNamespaceExportSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),
+                    _reexporterModule_: a Module Record,
+                    _exportName_: a String,
+                    _namespaceModule_: a Module Record,
+                    _namespaceNames_: a List of Strings,
+                    _onAmbiguous_: ~allow-ambiguous~ or ~disallow-ambiguous~,
+                  ): a Boolean
+                </ins>
+              </h1>
+              <dl class="header"></dl>
+              <emu-alg>
+                1. If ResolveSetContains(_deferNamespaceExportSet_, _reexporterModule_, _exportName_) is *true*, return *false*.
+                1. Append the Record { [[Module]]: _reexporterModule_, [[ExportName]]: _exportName_ } to _deferNamespaceExportSet_.
+                1. Assert: ResolveSetContains(_deferNamespaceExportSet_, _reexporterModule_, _exportName_) is *true*.
+                1. For each String _name_ of _namespaceNames_, do
+                  1. Let _resolution_ be _namespaceModule_.ResolveExport(_name_, « », _deferNamespaceExportSet_).
+                  1. If _resolution_ is *null*, return *true*.
+                  1. If _resolution_ is ~ambiguous~ and _onAmbiguous_ is ~disallow-ambiguous~, return *true*.
+                1. Return *false*.
+              </emu-alg>
+            </emu-clause>
           </emu-clause>
         </emu-clause>
 
@@ -2418,10 +2465,9 @@ contributors: Nicolò Ribaudo
                   1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _oie_.[[ExportName]], and *"\*"*.</ins>
                   1. <ins>Let _initializationSteps_ be a new Abstract Closure with no parameters that captures _module_ and _oie_ and performs the following steps when called:</ins>
                     1. <ins>Let _importedModule_ be GetImportedModule(_module_, _oie_.[[ModuleRequest]]).</ins>
-                    1. <span style="background-color: yellow;">TODO: Figure out where to call EnsureResolvableBinding. Not here, as this is meant to be free from side effects.</span>
                     1. <ins>Return GetModuleNamespace(_importedModule_, _oie_.[[ModuleRequest]].[[Phase]], _oie_.[[NamespaceNamesFilter]]).</ins>
                   1. <ins>Perform CreateDeferredInitializationBinding(_env_, _localName_, _initializationSteps_).</ins>
-                  1. <ins>NOTE: The _localName_ binding of `export defer { ...} as ns from "mod"` is initialized on first access, as whether the corresponding module is available or not depends on _module_'s importers.</ins>
+                  1. <ins>NOTE: The _localName_ binding of `export defer { ...} as ns from "mod"` is initialized on first access, as whether the corresponding module is available or not depends on _module_'s importers. If any of _module_'s importers causes this binding to be imported, they will also validate it through EnsureResolvableBinding.</ins>
               1. Let _moduleContext_ be a new ECMAScript code execution context.
               1. Set the Function of _moduleContext_ to *null*.
               1. Assert: _module_.[[Realm]] is not *undefined*.
