@@ -342,7 +342,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. <del>Let _specifier_ be SV of |FromClause|.</del>
           1. <del>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.</del>
-          1. Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|).
+          1. <ins>Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|).</ins>
         </emu-alg>
         <emu-grammar>
           ExportDeclaration : `export` ExportFromClause FromClause WithClause `;`
