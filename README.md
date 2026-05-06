@@ -35,12 +35,14 @@ Some tools workaround this problem using a technique called "tree-shaking": they
 
 ## Proposal
 
-This proposal aims to address the problem by allowing libraries to mark re-exports as "ignore if unused", defining:
+This proposal aims to allow libraries to continue using this popular pattern while removing the drawbacks that it comes with.
+
+It does so by allowing libraries to mark re-exports as "ignore if unused", defining:
 1. clear semantics to follow, rather than relying on tooling-defined heuristics;
 2. semantics that can also be implemented by native JS platforms to avoid loading unused code;
 3. an integration with the `import defer` proposal, to allow these re-exports to benefit from the same "after loading, only execute if actually needed" semantics.
 
-This proposal will use the below syntax, parallel to the [import defer](https://github.com/tc39/proposal-defer-import-eval/) proposal:
+This proposal uses the syntax below, parallel to the [import defer](https://github.com/tc39/proposal-defer-import-eval/) proposal:
 ```js
 // math.js
 
@@ -329,3 +331,35 @@ math.sub; // Executes ./math/sub.js
 ```
 
 All dependencies are still loaded upfront, and deferred modules that use top-level await are pre-executed (like when using the `import defer` proposal alone), so that they are synchronously available upon request.
+
+### Comparison with `package.json#exports`
+
+Originally introduced by Node.js but now recognized by multiple build tools, `package.json#exports` allows defining the entry points of a JavaScript package ([docs](https://nodejs.org/api/packages.html#package-entry-points)).
+
+A library, in this example called `react`, could have a main entrypoint that is environment-agnostic and then have multiple entry points for specialized features:
+```json
+{
+  "exports": {
+    ".": "./lib/index.js",
+    "./dom": "./lib/dom.js",
+    "./ssr": "./lib/ssr.js"
+  }
+}
+```
+
+When importing it, users can then use the "good-looking" entry point names rather than having to import the library's internal files:
+```js
+import { createElement } from "react"; // Imports react/lib/index.js
+import { render } from "react/dom"; // Imports react/lib/dom.js
+```
+
+This allow libraries to provide separate entrypoints for separate features, without requiring users to use deep paths into the library's chosen file structure. It gives to the library's users a similar experience as if all the files that users are meant to import were all living in the root folder of such library. `package.json#exports` work enteirely at resolution time.
+
+`export defer` partially overlaps with `package.json#exports`: both of them allow importers to import _parts_ of a library without having to write multiple complex paths. However, they have different trade-offs and are not interchangeable, but can work together:
+- `package.json#exports` only works at the "Node.js package" level. Complex applications often have internal folders that are conceptually internal libaries, with their own entry point. `export defer`, being a language feature, is not tied to the "package" concept from Node.js, and can be used wherever within the application.
+- `export defer` would work natively in browsers, while `package.json#exports` is a feature specific to how Node.js resolution works.
+- `package.json#exports` allows defining which JavaScript files within a library are internal and which ones are part of the public API, preventing the library's users from importing internal files. `export defer` does not related to this use case.
+
+There are existing popular libraries that already mix `package.json#exports` and barrel files. One example is [`msw`](https://github.com/mswjs/msw) ("Mock Service Worker"), which:
+- defines environment-specific entry points using `package.json#exports` (e.g. `msw/node` and `msw/browser`) — [msw/package.json](https://github.com/mswjs/msw/blob/de188887793fcc1956f4e506459fe3db0a13dabf/package.json)
+- in each entry point, it re-exports multiple tools using `export { ... } from` — [msw/src/core/index.ts](https://github.com/mswjs/msw/blob/de188887793fcc1956f4e506459fe3db0a13dabf/src/core/index.ts)
