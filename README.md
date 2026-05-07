@@ -35,7 +35,7 @@ Some tools workaround this problem using a technique called "tree-shaking": they
 
 ## Proposal
 
-This proposal aims to allow libraries to continue using this popular pattern while removing the drawbacks that it comes with.
+This proposal aims to allow libraries to continue using the popular pattern of providing multiple separate functionalities from a single entrypoint, while removing the drawbacks that it comes with.
 
 It does so by allowing libraries to mark re-exports as "ignore if unused", defining:
 1. clear semantics to follow, rather than relying on tooling-defined heuristics;
