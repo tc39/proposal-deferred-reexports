@@ -1551,9 +1551,9 @@ contributors: Nicolò Ribaudo
                 1. Else,
                   1. NOTE: When exporting a binding or namespace object which was originally imported from another module, the ExportEntry Record is rewritten to match the form it would have if the binding or namespace object had been re-exported directly from the original module rather than imported then exported. This allows conflicts which arise from exporting the same binding or namespace twice under the same name through `export * from` to be ignored rather than being treated as ambiguous in step <emu-xref href="#step-resolveexport-conflict"></emu-xref> of <emu-xref href="#sec-resolveexport">the ResolveExport concrete method of Source Text Module Records</emu-xref>.
                   1. Let _ie_ be the element of _importEntries_ whose [[LocalName]] is _ee_.[[LocalName]].
-                  1. If _ie_.[[ImportName]] is ~namespace-object~, then
+                  1. If _ie_.[[ImportName]] is ~namespace~, then
                     1. NOTE: This is a re-export of an imported module namespace object.
-                    1. Append the ExportEntry Record { [[ModuleRequest]]: _ie_.[[ModuleRequest]], [[ImportName]]: ~all~, [[LocalName]]: *null*, [[ExportName]]: _ee_.[[ExportName]] } to _indirectExportEntries_.
+                    1. Append the ExportEntry Record { [[ModuleRequest]]: _ie_.[[ModuleRequest]], [[ImportName]]: ~namespace~, [[LocalName]]: *null*, [[ExportName]]: _ee_.[[ExportName]] } to _indirectExportEntries_.
                   1. Else,
                     1. NOTE: This is a re-export of a single name.
                     1. Append the ExportEntry Record { [[ModuleRequest]]: _ie_.[[ModuleRequest]], [[ImportName]]: _ie_.[[ImportName]], [[LocalName]]: *null*, [[ExportName]]: _ee_.[[ExportName]] } to _indirectExportEntries_.
@@ -1652,7 +1652,7 @@ contributors: Nicolò Ribaudo
                 1. If _e_.[[ExportName]] is _exportName_, then
                   1. Assert: _e_.[[ModuleRequest]] is not *null*.
                   1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
-                  1. If _e_.[[ImportName]] is ~all~, then
+                  1. If _e_.[[ImportName]] is ~namespace~, then
                     1. Assert: _module_ does not provide the direct binding for this export.
                     1. <ins>If _module_.[[OptionalIndirectExportEntries]] contains _e_ and _deferNamespaceExportSet_ does not contain _importedModule_, then</ins>
                       1. <ins>Append _importedModule_ to _deferNamespaceExportSet_.</ins>
@@ -1722,7 +1722,7 @@ contributors: Nicolò Ribaudo
               1. Set _module_.[[Environment]] to _env_.
               1. For each ImportEntry Record _in_ of _module_.[[ImportEntries]], do
                 1. Let _importedModule_ be GetImportedModule(_module_, _in_.[[ModuleRequest]]).
-                1. If _in_.[[ImportName]] is ~namespace-object~, then
+                1. If _in_.[[ImportName]] is ~namespace~, then
                   1. <ins>For each String _name_ of _importedModule_.GetExportedNames(), do</ins>
                     1. <ins>NOTE: All exports of _importedModule_ other than `export defer` ones are also validated by the InitializeEnvironment call on _importedModule_ itself, and it is not observable which of the two InitializeEnvironment calls throws the *SyntaxError*.</ins>
                     1. <ins>If _importedModule_.ResolveExport(_name_) is *null*, throw a *SyntaxError* exception.</ins>
@@ -1797,7 +1797,7 @@ contributors: Nicolò Ribaudo
                     1. If _existingRequest_ is ~empty~ and ModuleRequestsKeyEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
                       1. Set _existingRequest_ to _r_.
                   1. Let _newImportedNames_ be ~all~.
-                  1. Assert: _oie_.[[ImportName]] is a String or ~all~.
+                  1. Assert: _oie_.[[ImportName]] is a String or ~namespace~.
                   1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
                   1. If _existingRequest_ is ~empty~, then
                     1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_ }.
@@ -1903,7 +1903,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar>NameSpaceImport : `*` `as` ImportedBinding</emu-grammar>
         <emu-alg>
           1. Let _localName_ be the StringValue of |ImportedBinding|.
-          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~namespace-object~, [[LocalName]]: _localName_ }.
+          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~namespace~, [[LocalName]]: _localName_ }.
           1. Return « _entry_ ».
         </emu-alg>
         <emu-grammar>NamedImports : `{` `}`</emu-grammar>
