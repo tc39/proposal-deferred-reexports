@@ -28,8 +28,8 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-module-environment-records-getbindingvalue-n-s" type="concrete method">
           <h1>
             GetBindingValue (
-              _N_: a String,
-              _S_: a Boolean,
+              _name_: a String,
+              _strict_: a Boolean,
             ): either a normal completion containing an ECMAScript language value or a throw completion
           </h1>
           <dl class="header">
@@ -37,27 +37,27 @@ contributors: Nicolò Ribaudo
             <dd>a Module Environment Record _envRec_</dd>
 
             <dt>description</dt>
-            <dd>It returns the value of its bound identifier whose name is _N_. However, if the binding is an indirect binding the value of the target binding is returned. If the binding exists but is uninitialized a *ReferenceError* is thrown.</dd>
+            <dd>It returns the value of its bound identifier whose name is _name_. However, if the binding is an indirect binding the value of the target binding is returned. If the binding exists but is uninitialized a *ReferenceError* is thrown.</dd>
           </dl>
           <emu-alg>
-            1. Assert: _S_ is *true*.
-            1. Assert: _envRec_ has a binding for _N_.
-            1. If the binding for _N_ is an indirect binding, then
-              1. Let _module_ and _targetName_ be the indirection values provided when this binding for _N_ was created.
+            1. Assert: _strict_ is *true*.
+            1. Assert: _envRec_ has a binding for _name_.
+            1. If the binding for _name_ is an indirect binding, then
+              1. Let _module_ and _targetName_ be the indirection values provided when this binding for _name_ was created.
               1. Let _targetEnv_ be _module_.[[Environment]].
               1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
               1. Return ? <emu-meta effects="user-code">_targetEnv_.GetBindingValue(_targetName_, *true*)</emu-meta>.
-            1. If the binding for _N_ in _envRec_ is an uninitialized binding, then
-              1. <ins>If the binding for _N_ in _envRec_ is a deferred initialization binding, then</ins>
-                1. <ins>Let _initializationSteps_ be the deferred initialization steps provided for _N_ when this binding was created.</ins>
+            1. If the binding for _name_ in _envRec_ is an uninitialized binding, then
+              1. <ins>If the binding for _name_ in _envRec_ is a deferred initialization binding, then</ins>
+                1. <ins>Let _initializationSteps_ be the deferred initialization steps provided for _name_ when this binding was created.</ins>
                 1. <ins>Let _value_ be _initializationSteps_().</ins>
-                1. <ins>Perform ! _envRec_.InitializeBinding(_N_, _value_).</ins>
+                1. <ins>Perform ! _envRec_.InitializeBinding(_name_, _value_).</ins>
               1. <ins>Else,</ins>
                 1. Throw a *ReferenceError* exception.
-            1. Return the value currently bound to _N_ in _envRec_.
+            1. Return the value currently bound to _name_ in _envRec_.
           </emu-alg>
           <emu-note>
-            <p>_S_ will always be *true* because a |Module| is always strict mode code.</p>
+            <p>_strict_ will always be *true* because a |Module| is always strict mode code.</p>
           </emu-note>
         </emu-clause>
 
