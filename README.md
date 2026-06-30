@@ -10,7 +10,7 @@ Stage: 2
 
 ## Introduction
 
-Web applications often have a large amount of JavaScript code, which can have a significant impact on startup time. One way to reduce this impact is by carefully loading as little code needed at any time, potentially prefetching code that is likely to be needed in the future. However, this has proven to be difficult in practice, often leading to under-optimized web applications.
+Web applications often have a large amount of JavaScript code, which can have a significant impact on startup time. One way to reduce this impact is by carefully loading as little code as needed at any time, potentially prefetching code that is likely to be needed in the future. However, this has proven to be difficult in practice, often leading to under-optimized web applications.
 
 The [`import defer` proposal](https://github.com/tc39/proposal-defer-import-eval/) tackled part of this problem, by allowing with minimal friction to defer execution of code that is not needed during the application startup. It does so by introducing syntax to mark _import_ declarations as "deferrable until when their exports are accessed":
 
@@ -25,22 +25,24 @@ function fn() {
 }
 ```
 
-As part of the proposal, we considered ([2023-11 slides](https://docs.google.com/presentation/d/1l-H2ntEDZGAWvtuOup1TJdylZsV1epKVSejVM-GwHLU), [2024-04 `export ... from` slides](https://docs.google.com/presentation/d/1iM5cRgdRXLWLq_GxgRvzYmUTXEK6gzH_8QNgLKMmv7o)) adding similar functionality to `export ... from` declaration. However, `export ... from` declaration have the opportunity to also skip _loading_ of unused modules, and we thus when advancing `import defer` to Stage 2.7 we decided ([2024-04 `import defer` slides](https://docs.google.com/presentation/d/1oPEF8nA9Iq5cAqjN-FqMigNNfz6lWCUbNfIsEjRXf4Y)) to keep the equivalent `export ... from` feature behind as a separate proposal.
+As part of the proposal, we considered ([2023-11 slides](https://docs.google.com/presentation/d/1l-H2ntEDZGAWvtuOup1TJdylZsV1epKVSejVM-GwHLU), [2024-04 `export ... from` slides](https://docs.google.com/presentation/d/1iM5cRgdRXLWLq_GxgRvzYmUTXEK6gzH_8QNgLKMmv7o)) adding similar functionality to `export ... from` declaration. However, `export ... from` declarations have the opportunity to also skip _loading_ of unused modules, and we thus, when advancing `import defer` to Stage 2.7, decided ([2024-04 `import defer` slides](https://docs.google.com/presentation/d/1oPEF8nA9Iq5cAqjN-FqMigNNfz6lWCUbNfIsEjRXf4Y)) to keep the equivalent `export ... from` feature behind as a separate proposal.
 
 ## Problem statement
 
 A common pattern that libraries adopt to improve DX of their consumers is to have a single entry point that re-exports all the public APIs. This however has a problem: it leads to a lot of unused code being included in the module graph.
 
-Some tools workaround this problem using a technique called "tree-shaking": they trace the dependencies of the individual bindings exported by a module, and remove the transitive imports (or re-exports) that are only needed for unused exports. However, this operation is not always possible due to side effects that may caused by modules being loaded: different tools choose different trade-offs between code size and correctness, often leading to under-optimization of web applications or to difficult-to-debug issues caused by non-pure modules not being executed as expected. This technique is also _not_ possible when running ESM directly in the browser, as it requires whole-program analysis.
+Some tools workaround this problem using a technique called "tree-shaking": they trace the dependencies of the individual bindings exported by a module, and remove the transitive imports (or re-exports) that are only needed for unused exports. However, this operation is not always possible due to side effects that may be caused by modules being loaded: different tools choose different trade-offs between code size and correctness, often leading to under-optimization of web applications or to difficult-to-debug issues caused by non-pure modules not being executed as expected. This technique is also _not_ possible when running ESM directly in the browser, as it requires whole-program analysis.
 
 ## Proposal
 
-This proposal aims to address the problem by allowing libraries to mark re-exports as "ignore if unused", defining:
+This proposal aims to allow libraries to continue using the popular pattern of providing multiple separate functionalities from a single entrypoint, while removing the drawbacks that it comes with.
+
+It does so by allowing libraries to mark re-exports as "ignore if unused", defining:
 1. clear semantics to follow, rather than relying on tooling-defined heuristics;
 2. semantics that can also be implemented by native JS platforms to avoid loading unused code;
 3. an integration with the `import defer` proposal, to allow these re-exports to benefit from the same "after loading, only execute if actually needed" semantics.
 
-This proposal will use the below syntax, parallel to the [import defer](https://github.com/tc39/proposal-defer-import-eval/) proposal:
+This proposal uses the syntax below, parallel to the [import defer](https://github.com/tc39/proposal-defer-import-eval/) proposal:
 ```js
 // math.js
 
@@ -272,9 +274,9 @@ Always executing `defer-exported` modules after the module that re-exports them 
   </table>
 </details>
 
-The proposed ordering is also much simpler to polyfill in tools, which can extract the `export defer` declaration from imported files and replace them with `import` statements in the importer module.
+The proposed ordering is also much simpler to polyfill in tools, which can extract the `export defer` declarations from imported files and replace them with `import` statements in the importer module.
 
-`export defer * from './foo.js` is not supported and not planned to be supported, because we require that deferred reexport names can be explicitly known without further dependency loading, as a requirement of lazy network loading.
+`export defer * from './foo.js'` is not supported and not planned to be supported, because we require that deferred reexport names can be explicitly known without further dependency loading, as a requirement of lazy network loading.
 
 ### Namespace imports
 
@@ -305,7 +307,7 @@ export { mul } from "./math/mul.js";
 ```
 ```js
 // index.js
-export * from "./math.js"; // Loads (./math.js, ./math/mul.js and ./math/add.js), does not load ./math/add.js
+export * from "./math.js"; // Loads (./math.js, ./math/mul.js and ./math/sub.js), does not load ./math/add.js
 ```
 
 
@@ -329,3 +331,35 @@ math.sub; // Executes ./math/sub.js
 ```
 
 All dependencies are still loaded upfront, and deferred modules that use top-level await are pre-executed (like when using the `import defer` proposal alone), so that they are synchronously available upon request.
+
+### Comparison with `package.json#exports`
+
+Originally introduced by Node.js but now recognized by multiple build tools, `package.json#exports` allows defining the entry points of a JavaScript package ([docs](https://nodejs.org/api/packages.html#package-entry-points)).
+
+A library, in this example called `react`, could have a main entrypoint that is environment-agnostic and then have multiple entry points for specialized features:
+```json
+{
+  "exports": {
+    ".": "./lib/index.js",
+    "./dom": "./lib/dom.js",
+    "./ssr": "./lib/ssr.js"
+  }
+}
+```
+
+When importing it, users can then use the "good-looking" entry point names rather than having to import the library's internal files:
+```js
+import { createElement } from "react"; // Imports react/lib/index.js
+import { render } from "react/dom"; // Imports react/lib/dom.js
+```
+
+This allows libraries to provide separate entrypoints for separate features, without requiring users to use deep paths into the library's chosen file structure. It gives to the library's users a similar experience as if all the files that users are meant to import were all living in the root folder of such library. `package.json#exports` works entirely at resolution time.
+
+`export defer` partially overlaps with `package.json#exports`: both of them allow importers to import _parts_ of a library without having to write multiple complex paths. However, they have different trade-offs and are not interchangeable, but can work together:
+- `package.json#exports` only works at the "Node.js package" level. Complex applications often have internal folders that are conceptually internal libraries, with their own entry point. `export defer`, being a language feature, is not tied to the "package" concept from Node.js, and can be used wherever within the application.
+- `export defer` would work natively in browsers, while `package.json#exports` is a feature specific to how Node.js resolution works.
+- `package.json#exports` allows defining which JavaScript files within a library are internal and which ones are part of the public API, preventing the library's users from importing internal files. `export defer` does not relate to this use case.
+
+There are existing popular libraries that already mix `package.json#exports` and barrel files. One example is [`msw`](https://github.com/mswjs/msw) ("Mock Service Worker"), which:
+- defines environment-specific entry points using `package.json#exports` (e.g. `msw/node` and `msw/browser`) — [msw/package.json](https://github.com/mswjs/msw/blob/de188887793fcc1956f4e506459fe3db0a13dabf/package.json)
+- in each entry point, it re-exports multiple tools using `export { ... } from` — [msw/src/core/index.ts](https://github.com/mswjs/msw/blob/de188887793fcc1956f4e506459fe3db0a13dabf/src/core/index.ts)
