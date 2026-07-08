@@ -738,7 +738,7 @@ contributors: Nicolò Ribaudo
             1. If _promise_.[[PromiseState]] is ~rejected~, then
               1. If _promise_.[[PromiseIsHandled]] is *false*, perform HostPromiseRejectionTracker(_promise_, *"handle"*).
               1. Set _promise_.[[PromiseIsHandled]] to *true*.
-              1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
+              1. Throw _promise_.[[PromiseResult]].
             1. Return ~unused~.
           </emu-alg>
 
@@ -2546,7 +2546,7 @@ contributors: Nicolò Ribaudo
                 1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
                   1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
                   1. Let _existingRequest_ be ~empty~.
-                  1. For each ModuleRequest Record _r_ in _requests_, do
+                  1. For each ModuleRequest Record _r_ of _requests_, do
                     1. If _existingRequest_ is ~empty~ and ModuleRequestsKeyEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
                       1. Set _existingRequest_ to _r_.
                   1. Let _newImportedNames_ be ~all~.
