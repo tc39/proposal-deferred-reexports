@@ -225,26 +225,24 @@ contributors: Nicolò Ribaudo
             1. <ins>Let _filter_ be Completion(Get(_options_, *"filter"*)).</ins>
             1. <ins>IfAbruptRejectPromise(_filter_, _promiseCapability_).</ins>
             1. <ins>If _filter_ is not *undefined*, then</ins>
-              1. <ins>Let _filterIsArray_ be Completion(IsArray(_filter_)).</ins>
-              1. <ins>IfAbruptRejectPromise(_filterIsArray_, _promiseCapability_).</ins>
-              1. <ins>If _filterIsArray_ is *false*, then</ins>
+              1. <ins>If _filter_ is not an Object, then</ins>
                 1. <ins>Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; a newly created *TypeError* object &raquo;).</ins>
                 1. <ins>Return _promiseCapability_.[[Promise]].</ins>
-              1. <ins>Let _length_ be Completion(LengthOfArrayLike(_filter_)).</ins>
-              1. <ins>IfAbruptRejectPromise(_length_, _promiseCapability_).</ins>
+              1. <ins>Let _iteratorRecord_ be Completion(GetIterator(_filter_, ~sync~)).</ins>
+              1. <ins>IfAbruptRejectPromise(_iteratorRecord_, _promiseCapability_).</ins>
               1. <ins>Let _names_ be a new empty List.</ins>
-              1. <ins>Let _index_ be 0.</ins>
-              1. <ins>Repeat, while _index_ &lt; _length_,</ins>
-                1. <ins>Let _name_ be Completion(Get(_filter_, ! ToString(𝔽(_index_)))).</ins>
-                1. <ins>IfAbruptRejectPromise(_name_, _promiseCapability_).</ins>
-                1. <ins>If _name_ is not a String, then</ins>
-                  1. <ins>Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; a newly created *TypeError* object &raquo;).</ins>
-                  1. <ins>Return _promiseCapability_.[[Promise]].</ins>
-                1. <ins>If _names_ contains _name_, then</ins>
-                  1. <ins>Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; a newly created *TypeError* object &raquo;).</ins>
-                  1. <ins>Return _promiseCapability_.[[Promise]].</ins>
-                1. <ins>Append _name_ to _names_.</ins>
-                1. <ins>Set _index_ to _index_ + 1.</ins>
+              1. <ins>Let _done_ be *false*.</ins>
+              1. <ins>Repeat, while _done_ is *false*,</ins>
+                1. <ins>Let _next_ be Completion(IteratorStepValue(_iteratorRecord_)).</ins>
+                1. <ins>IfAbruptRejectPromise(_next_, _promiseCapability_).</ins>
+                1. <ins>If _next_ is ~done~, then</ins>
+                  1. <ins>Set _done_ to *true*.</ins>
+                1. <ins>Else if _next_ is not a String, then</ins>
+                  1. <ins>Let _error_ be ThrowCompletion(a newly created *TypeError* object).</ins>
+                  1. <ins>Let _closeResult_ be Completion(IteratorClose(_iteratorRecord_, _error_)).</ins>
+                  1. <ins>IfAbruptRejectPromise(_closeResult_, _promiseCapability_).</ins>
+                1. <ins>Else if _names_ does not contain _next_, then</ins>
+                  1. <ins>Append _next_ to _names_.</ins>
               1. <ins>Set _importedNames_ to _names_.</ins>
           1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: _importedNames_</ins> }.
           1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
