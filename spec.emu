@@ -2326,7 +2326,7 @@ contributors: Nicolò Ribaudo
               <dl class="header"></dl>
               <emu-alg>
                 1. Let _exportedNames_ be a new empty List.
-                1. Let _allNamedExportEntries_ be the list-concatenation of _module_.[[LocalExportEntries]], _module_.[[IndirectExportEntries]], and _module_.[[OptionalIndirectExportEntries]].</ins>
+                1. Let _allNamedExportEntries_ be the list-concatenation of _module_.[[LocalExportEntries]], _module_.[[IndirectExportEntries]], and _module_.[[OptionalIndirectExportEntries]].
                 1. For each ExportEntry Record _e_ of _allNamedExportEntries_, do
                   1. Assert: _e_.[[ExportName]] is not *null*.
                   1. Append _e_.[[ExportName]] to _exportedNames_.
@@ -2962,6 +2962,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ExportFromClause : `*`</emu-grammar>
         <emu-alg>
+          1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
           1. Return « ».
         </emu-alg>
         <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
