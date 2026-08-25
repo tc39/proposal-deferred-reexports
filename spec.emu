@@ -412,7 +412,7 @@ contributors: Nicolò Ribaudo
                 <ins>[[ImportedNames]]</ins>
               </td>
               <td>
-                <ins>~all~, ~all-but-default~, or a List of Strings</ins>
+                <ins>~all~ or a List of Strings</ins>
               </td>
               <td>
                 <ins>The list of names imported from the requested module, used for filtering `export defer` declarations.</ins>
@@ -644,7 +644,7 @@ contributors: Nicolò Ribaudo
             <tr id="abstract-loadrequestedmodules">
               <td>
                 LoadRequestedModules (
-                  <ins>optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+                  <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
                   optional _hostDefined_: anything,
                 ): a Promise
               </td>
@@ -693,7 +693,7 @@ contributors: Nicolò Ribaudo
             <tr id="abstract-link">
               <td>
                 Link (
-                  <ins>optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+                  <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
                 ): either a normal completion containing ~unused~ or a throw completion
               </td>
               <td>
@@ -709,7 +709,7 @@ contributors: Nicolò Ribaudo
             <tr id="abstract-evaluate">
               <td>
                 Evaluate (
-                  <ins>optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+                  <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
                 ): a Promise
               </td>
               <td>
@@ -768,7 +768,7 @@ contributors: Nicolò Ribaudo
           <h1>
             EvaluateModuleSync (
               _module_: a Module Record,
-              <ins>optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
           <dl class="header">
@@ -792,7 +792,7 @@ contributors: Nicolò Ribaudo
             <h1>
               ReadyForSyncExecution (
                 _module_: a Module Record,
-                <ins>_importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
                 optional _seen_: a List of Module Records,
               ): a Boolean
             </h1>
@@ -1007,7 +1007,7 @@ contributors: Nicolò Ribaudo
               <td>
                 <ins>
                   GetOptionalIndirectExportsModuleRequests(
-                    optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,
+                    _importedNames_: ~all~ or a List of Strings,
                   ): a List of ModuleRequest Records
                 </ins>
               </td>
@@ -1082,7 +1082,7 @@ contributors: Nicolò Ribaudo
               </td>
               <td>
                 <del>a List of Cyclic Module Records</del>
-                <ins>a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~, ~all-but-default~, or a List of Strings)</ins>
+                <ins>a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings)</ins>
               </td>
               <td>
                 It is a list of the Cyclic Module Records that have been already loaded by the current loading process, <ins>together with the list of bindings that have already been imported from them,</ins> to avoid infinite loops with circular dependencies.
@@ -1105,7 +1105,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-LoadRequestedModules" type="concrete method">
           <h1>
             LoadRequestedModules (
-              <ins>optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
               optional _hostDefined_: anything,
             ): a Promise
           </h1>
@@ -1140,7 +1140,7 @@ contributors: Nicolò Ribaudo
               InnerModuleLoading (
                 _state_: a GraphLoadingState Record,
                 _module_: a Module Record,
-                <ins>_importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): ~unused~
             </h1>
             <dl class="header">
@@ -1187,7 +1187,7 @@ contributors: Nicolò Ribaudo
               ContinueModuleLoading (
                 _state_: a GraphLoadingState Record,
                 _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
-                <ins>_importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): ~unused~
             </h1>
             <dl class="header">
@@ -1210,7 +1210,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-moduledeclarationlinking" type="concrete method" oldids="sec-moduledeclarationinstantiation">
           <h1>
             Link (
-              <ins>optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
           <dl class="header">
@@ -1300,7 +1300,7 @@ contributors: Nicolò Ribaudo
                   _linkingList_: a List of Module Records,
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
-                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~, ~all-but-default~, or a List of Strings),
+                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
                 ): ~unused~
               </ins>
             </h1>
@@ -1325,7 +1325,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-moduleevaluation" type="concrete method">
           <h1>
             Evaluate (
-              <ins>optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,</ins>
+              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
             ): a Promise
           </h1>
           <dl class="header">
@@ -1589,8 +1589,8 @@ contributors: Nicolò Ribaudo
             <ins>
               GetNewOptionalIndirectExportsModuleRequests (
                 _module_: a Cyclic Module Record,
-                _importedNames_: ~all~, ~all-but-default~, or a List of Strings,
-                _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~, ~all-but-default~, or a List of Strings),
+                _importedNames_: ~all~, or a List of Strings,
+                _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
               ): a List of ModuleRequest Records
             </ins>
           </h1>
@@ -2291,16 +2291,16 @@ contributors: Nicolò Ribaudo
                 1. Assert: We've reached the starting point of an `export *` circularity.
                 1. Return a new empty List.
               1. Append _module_ to _exportStarSet_.
-              1. Let _exportedNames_ be a new empty List.
-              1. <ins>Let _allNamedExportEntries_ be the list-concatenation of _module_.[[LocalExportEntries]], _module_.[[IndirectExportEntries]], and _module_.[[OptionalIndirectExportEntries]].</ins>
-              1. For each ExportEntry Record _e_ of <del>_module_.[[LocalExportEntries]]</del><ins>_allNamedExportEntries_</ins>, do
+              1. <del>Let _exportedNames_ be a new empty List.</del>
+              1. <del>For each ExportEntry Record _e_ of _module_.[[LocalExportEntries]], do</del>
                 1. <del>Assert: _module_ provides the direct binding for this export.</del>
-                1. Assert: _e_.[[ExportName]] is not *null*.
-                1. Append _e_.[[ExportName]] to _exportedNames_.
+                1. <del>Assert: _e_.[[ExportName]] is not *null*.</del>
+                1. <del>Append _e_.[[ExportName]] to _exportedNames_.</del>
               1. <del>For each ExportEntry Record _e_ of _module_.[[IndirectExportEntries]], do</del>
                 1. <del>Assert: _module_ imports a specific binding for this export.</del>
                 1. <del>Assert: _e_.[[ExportName]] is not *null*.</del>
                 1. <del>Append _e_.[[ExportName]] to _exportedNames_.</del>
+              1. <ins>Let _exportedNames_ be GetOwnExportedNames(_module_).</ins>
               1. For each ExportEntry Record _e_ of _module_.[[StarExportEntries]], do
                 1. Assert: _e_.[[ModuleRequest]] is not *null*.
                 1. Let _requestedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
@@ -2314,6 +2314,25 @@ contributors: Nicolò Ribaudo
             <emu-note>
               <p>GetExportedNames does not filter out or throw an exception for names that have ambiguous star export bindings.</p>
             </emu-note>
+
+            <emu-clause id="sec-getownexportednames" type="abstract operation">
+              <h1>
+                <ins>
+                  GetOwnExportedNames (
+                    _module_: a Source Text Module Record
+                  ): a List of Strings
+                </ins>
+              </h1>
+              <dl class="header"></dl>
+              <emu-alg>
+                1. Let _exportedNames_ be a new empty List.
+                1. Let _allNamedExportEntries_ be the list-concatenation of _module_.[[LocalExportEntries]], _module_.[[IndirectExportEntries]], and _module_.[[OptionalIndirectExportEntries]].
+                1. For each ExportEntry Record _e_ of _allNamedExportEntries_, do
+                  1. Assert: _e_.[[ExportName]] is not *null*.
+                  1. Append _e_.[[ExportName]] to _exportedNames_.
+                1. Return _exportedNames_.
+              </emu-alg>
+            </emu-clause>
           </emu-clause>
 
           <emu-clause id="sec-resolveexport" type="concrete method">
@@ -2577,7 +2596,7 @@ contributors: Nicolò Ribaudo
             <h1>
               <ins>
                 GetOptionalIndirectExportsModuleRequests(
-                  optional _importedNames_: ~all~, ~all-but-default~, or a List of Strings,
+                  _importedNames_: ~all~ or a List of Strings,
                 ): a List of ModuleRequest Records
               </ins>
             </h1>
@@ -2589,16 +2608,22 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. Let _requests_ be a new empty List.
               1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
-                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+                1. Let _processEntry_ be *true*.
+                1. If _oie_.[[ImportName]] is ~all-but-default~, then
+                  1. Let _newImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
+                1. Else if _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+                  1. Let _newImportedNames_ be ~all~.
+                  1. Assert: _oie_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
+                  1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
+                  1. If _oie_.[[ImportName]] is ~filtered-namespace~, set _newImportedNames_ to _oie_.[[NamespaceNamesFilter]].
+                1. Else,
+                  1. Set _processEntry_ to *false*.
+                1. If _processEntry_ is *true*, then
                   1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
                   1. Let _existingRequest_ be ~empty~.
                   1. For each ModuleRequest Record _r_ of _requests_, do
                     1. If _existingRequest_ is ~empty~ and ModuleRequestsKeyEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
                       1. Set _existingRequest_ to _r_.
-                  1. Let _newImportedNames_ be ~all~.
-                  1. Assert: _oie_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
-                  1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
-                  1. If _oie_.[[ImportName]] is ~filtered-namespace~, set _newImportedNames_ to _oie_.[[NamespaceNamesFilter]].
                   1. If _existingRequest_ is ~empty~, then
                     1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_ }.
                     1. Append _request_ to _requests_.
@@ -2660,7 +2685,7 @@ contributors: Nicolò Ribaudo
             1. Let _exportedNames_ be _module_.GetExportedNames().
             1. Let _unambiguousNames_ be a new empty List.
             1. For each element _name_ of _exportedNames_, do
-              1. <ins>If _importedNames_ is ~all~ or, _importedNames_ contains _name_, then</ins>
+              1. <ins>If _importedNames_ is ~all~ or _importedNames_ contains _name_, then</ins>
                 1. If _phase_ is not ~defer~ or _name_ is not *"then"*, then
                   1. Let _resolution_ be _module_.ResolveExport(_name_).
                   1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
@@ -2886,7 +2911,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-ImportedNames" type="sdo">
         <h1>
           <ins>
-            Static Semantics: ImportedNames ( ): ~all~, ~all-but-default~, or a List of unique Strings
+            Static Semantics: ImportedNames ( ): ~all~ or a List of unique Strings
           </ins>
         </h1>
         <dl class="header">
@@ -2899,8 +2924,8 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportClause : ImportedDefaultBinding `,` NamedImports</emu-grammar>
         <emu-alg>
-          1. Let _names1_ be ImportedNames of |ImportedDefaultBinding|.
-          1. Let _names2_ be ImportedNames of |NamedImports|.
+          1. Let _names1_ be the ImportedNames of |ImportedDefaultBinding|.
+          1. Let _names2_ be the ImportedNames of |NamedImports|.
           1. Return MergeImportedNames(_names1_, _names2_).
         </emu-alg>
         <emu-grammar>ImportedDefaultBinding : ImportedBinding</emu-grammar>
@@ -2937,7 +2962,8 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ExportFromClause : `*`</emu-grammar>
         <emu-alg>
-          1. Return ~all-but-default~.
+          1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
+          1. Return « ».
         </emu-alg>
         <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
         <emu-alg>
@@ -2968,9 +2994,9 @@ contributors: Nicolò Ribaudo
           <h1>
             <ins>
               MergeImportedNames (
-                _a_: ~all~, ~all-but-default~, or a List of Strings,
-                _b_: ~all~, ~all-but-default~, or a List of Strings,
-              ): ~all~, ~all-but-default~, or a List of Strings
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
             </ins>
           </h1>
           <dl class="header">
@@ -2980,9 +3006,6 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
-            1. If _a_ is ~all-but-default~ and _b_ is a List of Strings that contains *"default"*, return ~all~.
-            1. If _b_ is ~all-but-default~ and _a_ is a List of Strings that contains *"default"*, return ~all~.
-            1. If _a_ is ~all-but-default~ or _b_ is ~all-but-default~, return ~all-but-default~.
             1. Assert: _a_ and _b_ are a List of Strings.
             1. Let _merged_ be a copy of the List _a_.
             1. For each String _name_ of _b_, do
@@ -2996,9 +3019,9 @@ contributors: Nicolò Ribaudo
           <h1>
             <ins>
               ExcludeImportedNames (
-                _a_: ~all~, ~all-but-default~, or a List of Strings,
-                _b_: ~all~, ~all-but-default~, or a List of Strings,
-              ): ~all~, ~all-but-default~, or a List of Strings
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
             </ins>
           </h1>
           <dl class="header">
@@ -3009,14 +3032,7 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. If _b_ is ~all~, return « ».
             1. If _a_ is ~all~, return ~all~.
-            1. If _a_ is ~all-but-default~, then
-              1. If _b_ is ~all-but-default~, return « ».
-              1. Return ~all-but-default~.
-            1. Assert: _a_ is a List of Strings.
-            1. If _b_ is ~all-but-default~, then
-              1. If _a_ contains *"default"*, return « *"default"* ».
-              1. Return « ».
-            1. Assert: _b_ is a Lists of Strings.
+            1. Assert: _a_ and _b_ are a List of Strings.
             1. Return a new List containing all the elements of _a_ that are not also elements of _b_.
           </emu-alg>
         </emu-clause>
@@ -3408,7 +3424,6 @@ contributors: Nicolò Ribaudo
             StatementListItem
 
           ExportDeclaration :
-            `export` ExportFromClause FromClause WithClause? `;`
             `export` NamedExports `;`
             `export` VariableStatement
             `export` Declaration
@@ -3418,6 +3433,13 @@ contributors: Nicolò Ribaudo
         </emu-grammar>
         <emu-alg>
           1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`</emu-grammar>
+        <emu-alg>
+          1. If |ExportFromClause| is not `*`, return a new empty List.
+          1. If |WithClause| is present, let _request_ be ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, |WithClause|).
+          1. Else, let _request_ be ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|).
+          1. Return ExportEntriesForModule of |ExportFromClause| with argument _request_.
         </emu-alg>
         <emu-grammar>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
