@@ -355,7 +355,7 @@ console.log('executed math');
 ```
 ```js
 // index.js
-import * as math from "./math.js"; // Loads everything (both ./math.js and ./math/mul.js), no execution at all
+import defer * as math from "./math.js"; // Loads everything (both ./math.js and ./math/mul.js), no execution at all
 
 math.add; // Executes ./math/add.js, logs 'executed math'
 math.sub; // Executes ./math/sub.js
