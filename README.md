@@ -48,9 +48,17 @@ This proposal uses the syntax below, parallel to the [import defer](https://gith
 
 export defer { add } from "./math/add.js";
 export defer { sub } from "./math/sub.js";
+export { mul } from "./math/mul.js";
 ```
 
 When a module imports the module above using, for example, `import { add } from "./math.js";`, it will only _load_ (and thus, _execute_) `./math.js` and `./math/add.js`, skipping `./math/sub.js` and all its dependencies.
+
+This proposal also introduces syntax to import a namespace object with a subset of the exports of the module:
+```js
+// user.js
+
+import { add, mul } as math from "./math.js";
+```
 
 ### Execution order
 
@@ -280,7 +288,7 @@ The proposed ordering is also much simpler to polyfill in tools, which can extra
 
 ### Namespace imports
 
-On module namespace objects, `export defer` will "deoptimize" and eagerly load all modules, but still allow lazy execution of those modules:
+By default, module namespace objects expose all of the exports of a module: `export defer` will "deoptimize" and eagerly load all of the deferred re-exports, but still allow lazy execution of them:
 
 ```js
 // math.js
@@ -297,19 +305,42 @@ math.add; // Executes ./math/add.js
 math.sub; // Executes ./math/sub.js
 ```
 
-A similar de-optimization happens with `export * from`, which will cause all the optional dependencies used for exports other than `default` to be eagerly loaded:
+To only load selected re-exports, developers can specify the names that want in the module namespace using a _filtered namespace import_:
+```js
+// index.js
+import { add, mul } as math from "./math.js"; // Loads ./math.js, ./math/mul.js and ./math/add.js (but not ./math/sub.js), logs 'executed math'
+
+math.add; // Executes ./math/add.js
+math.sub; // undefined, as it's not part of the filtered namespace
+```
+
+A similar feature is supported for dynamic import, by passing the list of names as the `exports` property of the dynamic import's options object:
+```js
+// index.js
+const math = await import("./math.js", { exports: ["add", "mul"] });
+```
+
+### Wildcard re-exports
+
+To continue supporting "proxy modules", which re-export everything from another module with minimal modifications, `export * from` propagates which bindings are deferred and which ones are not. Give a module with a mixed set of re-exports:
 
 ```js
 // math.js
-export defer { add as default } from "./math/add.js";
+export defer { add } from "./math/add.js";
 export defer { sub } from "./math/sub.js";
 export { mul } from "./math/mul.js";
 ```
+
+An `export * from "./math.js"` is effectively equivalent to:
+
 ```js
-// index.js
-export * from "./math.js"; // Loads (./math.js, ./math/mul.js and ./math/sub.js), does not load ./math/add.js
+// proxy.js
+
+export { mul } from "./math.js";
+export defer { add, sub } from "./math.js";
 ```
 
+This means that whether `./math/add.js` and `./math/sub.js` are loaded or not depends on whether the importer of `proxy.js` imports them or not.
 
 ### Integration with `import defer`
 
@@ -331,6 +362,13 @@ math.sub; // Executes ./math/sub.js
 ```
 
 All dependencies are still loaded upfront, and deferred modules that use top-level await are pre-executed (like when using the `import defer` proposal alone), so that they are synchronously available upon request.
+
+Filtered namespaces also work with `import defer`, by combining the two syntaxes:
+```js
+import defer { add, mul } as math from "./math.js";
+
+const math2 = await import.defer("./math.js", { exports: ["add", "mul"] });
+```
 
 ### Comparison with `package.json#exports`
 
