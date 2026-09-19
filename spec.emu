@@ -13,79 +13,6 @@ contributors: Nicolò Ribaudo
   <p style="margin-left:1em">NOTE: The diff markers are on top of <a href="https://tc39.es/proposal-defer-import-eval/">https://tc39.es/proposal-defer-import-eval/</a>.</p>
 </emu-note>
 
-<emu-clause id="sec-executable-code-and-execution-contexts" number="9">
-  <h1>Executable Code and Execution Contexts</h1>
-
-  <emu-clause id="sec-environment-records" oldids="sec-lexical-environments">
-    <h1>Environment Records</h1>
-
-    <emu-clause id="sec-the-environment-record-type-hierarchy">
-      <h1>The Environment Record Type Hierarchy</h1>
-
-      <emu-clause id="sec-module-environment-records" oldids="module-environment" number="5">
-        <h1>Module Environment Records</h1>
-
-        <emu-clause id="sec-module-environment-records-getbindingvalue-n-s" type="concrete method">
-          <h1>
-            GetBindingValue (
-              _name_: a String,
-              _strict_: a Boolean,
-            ): either a normal completion containing an ECMAScript language value or a throw completion
-          </h1>
-          <dl class="header">
-            <dt>for</dt>
-            <dd>a Module Environment Record _envRec_</dd>
-
-            <dt>description</dt>
-            <dd>It returns the value of its bound identifier whose name is _name_. However, if the binding is an indirect binding the value of the target binding is returned. If the binding exists but is uninitialized a *ReferenceError* is thrown.</dd>
-          </dl>
-          <emu-alg>
-            1. Assert: _strict_ is *true*.
-            1. Assert: _envRec_ has a binding for _name_.
-            1. If the binding for _name_ is an indirect binding, then
-              1. Let _module_ and _targetName_ be the indirection values provided when this binding for _name_ was created.
-              1. Let _targetEnv_ be _module_.[[Environment]].
-              1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
-              1. Return ? <emu-meta effects="user-code">_targetEnv_.GetBindingValue(_targetName_, *true*)</emu-meta>.
-            1. If the binding for _name_ in _envRec_ is an uninitialized binding, then
-              1. <ins>If the binding for _name_ in _envRec_ is a deferred initialization binding, then</ins>
-                1. <ins>Let _initializationSteps_ be the deferred initialization steps provided for _name_ when this binding was created.</ins>
-                1. <ins>Let _value_ be _initializationSteps_().</ins>
-                1. <ins>Perform ! _envRec_.InitializeBinding(_name_, _value_).</ins>
-              1. <ins>Else,</ins>
-                1. Throw a *ReferenceError* exception.
-            1. Return the value currently bound to _name_ in _envRec_.
-          </emu-alg>
-          <emu-note>
-            <p>_strict_ will always be *true* because a |Module| is always strict mode code.</p>
-          </emu-note>
-        </emu-clause>
-
-        <emu-clause id="sec-createdeferredinitializationbinding" type="abstract operation">
-          <h1>
-            <ins>
-              CreateDeferredInitializationBinding (
-                _envRec_: a Module Environment Record,
-                _name_: a String,
-                _initializationSteps_: an Abstract Closure that takes no arguments and returns an ECMAScript language value
-              ): ~unused~
-            </ins>
-          </h1>
-          <dl class="header">
-            <dt>description</dt>
-            <dd>It creates a <dfn>deferred initialization binding</dfn> (a binding that is automatically initialized on first access) for the name _name_. A binding must not already exist in _envRec_ for _name_.</dd>
-          </dl>
-          <emu-alg>
-            1. Assert: _envRec_ does not already have a binding for _name_.
-            1. Create an imutable deferred initialization binding in _envRec_ for _name_ whose deferred initialization steps is _initializationSteps_, and record that the binding is uninitialized and that it is a strict binding.
-            1. Return ~unused~.
-          </emu-alg>
-        </emu-clause>
-      </emu-clause>
-    </emu-clause>
-  </emu-clause>
-</emu-clause>
-
 <emu-clause id="sec-ordinary-and-exotic-objects-behaviours" number="10">
   <h1>Ordinary and Exotic Objects Behaviours</h1>
 
@@ -122,9 +49,9 @@ contributors: Nicolò Ribaudo
           1. Let _targetModule_ be _binding_.[[Module]].
           1. Assert: _targetModule_ is not *undefined*.
           1. If _binding_.[[BindingName]] is ~namespace~, then
-            1. Return GetModuleNamespace(_targetModule_, ~evaluation~, <ins>~all~</ins>).
+            1. Return GetModuleNamespace(_targetModule_, ~evaluation~, <ins>_binding_.[[Names]]</ins>).
           1. If _binding_.[[BindingName]] is ~deferred-namespace~, then
-            1. Return GetModuleNamespace(_targetModule_, ~defer~, <ins>~all~</ins>).
+            1. Return GetModuleNamespace(_targetModule_, ~defer~, <ins>_binding_.[[Names]]</ins>).
           1. Let _targetEnv_ be _targetModule_.[[Environment]].
           1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
           1. Return ? _targetEnv_.GetBindingValue(_binding_.[[BindingName]], *true*).
@@ -245,7 +172,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>Return _promiseCapability_.[[Promise]].</ins>
                 1. <ins>Else if _names_ does not contain _next_, then</ins>
                   1. <ins>Append _next_ to _names_.</ins>
-              1. <ins>Set _importedNames_ to _names_.</ins>
+              1. <ins>Set _importedNames_ to a List whose elements are the elements of _names_, sorted according to lexicographic code unit order.</ins>
           1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: _importedNames_</ins> }.
           1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
           1. Return _promiseCapability_.[[Promise]].
@@ -615,6 +542,17 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
+                <ins>[[FilteredNamespaces]]</ins>
+              </td>
+              <td>
+                <ins>a List of Records with fields [[Names]] (a List of Strings, sorted according to lexicographic code unit order) and [[Namespace]] (a module namespace exotic object)</ins>
+              </td>
+              <td>
+                <ins>The Module Namespace Objects created so far for this module that only expose a subset of its exported names, together with the names they were created for.</ins>
+              </td>
+            </tr>
+            <tr>
+              <td>
                 [[HostDefined]]
               </td>
               <td>
@@ -755,10 +693,21 @@ contributors: Nicolò Ribaudo
                 [[BindingName]]
               </td>
               <td>
-                a String or ~namespace~
+                a String, ~namespace~, or ~deferred-namespace~
               </td>
               <td>
-                The name of the binding within that module, or ~namespace~ if the export is the module's namespace object.
+                The name of the binding within that module, or ~namespace~ or ~deferred-namespace~ if the export is the module's namespace object.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <ins>[[Names]]</ins>
+              </td>
+              <td>
+                <ins>~all~ or a List of Strings, sorted according to lexicographic code unit order</ins>
+              </td>
+              <td>
+                <ins>When [[BindingName]] is ~namespace~ or ~deferred-namespace~, the exported names of [[Module]] to include in the namespace object, or ~all~ for the full namespace object. ~all~ when [[BindingName]] is a String.</ins>
               </td>
             </tr>
           </table>
@@ -1780,7 +1729,7 @@ contributors: Nicolò Ribaudo
                 <ins>a List of Strings or ~empty~</ins>
               </td>
               <td>
-                <ins>When [[ImportName]] is ~filtered-namespace-object~, this field contains the list of export names to include in the namespace object. For all other values of [[ImportName]], this field is ~empty~.</ins>
+                <ins>When [[ImportName]] is ~filtered-namespace-object~, this field contains the list of export names to include in the namespace object, sorted according to lexicographic code unit order. For all other values of [[ImportName]], this field is ~empty~.</ins>
               </td>
             </tr>
           </table>
@@ -1965,7 +1914,7 @@ contributors: Nicolò Ribaudo
                 <ins>a List of Strings or ~empty~</ins>
               </td>
               <td>
-                <ins>When [[ImportName]] is ~filtered-namespace~, this field contains the list of export names to include in the namespace object. For all other values of [[ImportName]], this field is ~empty~.</ins>
+                <ins>When [[ImportName]] is ~filtered-namespace~, this field contains the list of export names to include in the namespace object, sorted according to lexicographic code unit order. For all other values of [[ImportName]], this field is ~empty~.</ins>
               </td>
             </tr>
           </table>
@@ -2265,7 +2214,7 @@ contributors: Nicolò Ribaudo
                 1. Append _ee_ to _indirectExportEntries_.
             1. <ins>Let _optionalIndirectExportsEntries_ be OptionalIndirectExportEntries of _body_.</ins>
             1. Let _async_ be _body_ Contains `await`.
-            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_,</ins> [[DFSAncestorIndex]]: ~empty~ }.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, <ins>[[FilteredNamespaces]]: « »,</ins> [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_,</ins> [[DFSAncestorIndex]]: ~empty~ }.
           </emu-alg>
         </emu-clause>
 
@@ -2367,7 +2316,7 @@ contributors: Nicolò Ribaudo
               1. For each ExportEntry Record _e_ of _module_.[[LocalExportEntries]], do
                 1. If _e_.[[ExportName]] is _exportName_, then
                   1. Assert: _module_ provides the direct binding for this export.
-                  1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]] }.
+                  1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]]<ins>, [[Names]]: ~all~</ins> }.
               1. <ins>Let _allIndirectEntries_ be the list-concatenation of _module_.[[IndirectExportEntries]] and _module_.[[OptionalIndirectExportEntries]].</ins>
               1. For each ExportEntry Record _e_ of <del>_module_.[[IndirectExportEntries]]</del><ins>_allIndirectEntries_</ins>, do
                 1. If _e_.[[ExportName]] is _exportName_, then
@@ -2378,16 +2327,15 @@ contributors: Nicolò Ribaudo
                     1. <ins>Assert: _e_.[[NamespaceNamesFilter]] is ~empty~.</ins>
                     1. <ins>If _module_.[[OptionalIndirectExportEntries]] contains _e_ and NamespaceMemberIsUnresolvableOptional(_deferNamespaceExportSet_, _module_, _exportName_, _importedModule_, _importedModule_.GetExportedNames(), ~allow-ambiguous~) is *true*, return *null*.</ins>
                     1. If _e_.[[ModuleRequest]].[[Phase]] is ~defer~, then
-                      1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~ }.
+                      1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~<ins>, [[Names]]: ~all~</ins> }.
                     1. Else,
                       1. Assert: _e_.[[Phase]] is ~evaluation~.
-                      1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
+                      1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~<ins>, [[Names]]: ~all~</ins> }.
                   1. <ins>Else if _e_.[[ImportName]] is ~filtered-namespace~, then</ins>
                     1. <ins>Assert: _e_.[[NamespaceNamesFilter]] is a List of Strings.</ins>
                     1. <ins>If _module_.[[OptionalIndirectExportEntries]] contains _e_ and NamespaceMemberIsUnresolvableOptional(_deferNamespaceExportSet_, _module_, _exportName_, _importedModule_, _e_.[[NamespaceNamesFilter]], ~disallow-ambiguous~) is *true*, return *null*.</ins>
-                    1. <ins>NOTE: `export { ... } as ns from "mod"` introduces a local internal binding in the module that contains the |ExportDeclaration|. That binding is created by <emu-xref href="#sec-source-text-module-record-initialize-environment">InitializeEnvironment</emu-xref>.</ins>
-                    1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _exportName_, and *"\*"*.</ins>
-                    1. <ins>Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _localName_ }.</ins>
+                    1. <ins>If _e_.[[ModuleRequest]].[[Phase]] is ~defer~, let _bindingName_ be ~deferred-namespace~; else let _bindingName_ be ~namespace~.</ins>
+                    1. <ins>Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: _bindingName_, [[Names]]: _e_.[[NamespaceNamesFilter]] }.</ins>
                   1. Else,
                     1. Assert: _module_ imports a specific binding for this export.
                     1. Assert: _e_.[[ImportName]] is a String.
@@ -2410,8 +2358,13 @@ contributors: Nicolò Ribaudo
                   1. [id="step-resolveexport-conflict"] Else,
                     1. Assert: There is more than one `*` export that includes the requested name.
                     1. If _resolution_.[[Module]] and _starResolution_.[[Module]] are not the same Module Record, return ~ambiguous~.
-                    1. If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]] and either _resolution_.[[BindingName]] or _starResolution_.[[BindingName]] is ~namespace~, return ~ambiguous~.
-                    1. If _resolution_.[[BindingName]] is a String, _starResolution_.[[BindingName]] is a String, and _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
+                    1. <del>If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]] and either _resolution_.[[BindingName]] or _starResolution_.[[BindingName]] is ~namespace~, return ~ambiguous~.</del>
+                    1. <del>If _resolution_.[[BindingName]] is a String, _starResolution_.[[BindingName]] is a String, and _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.</del>
+                    1. <ins>If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.</ins>
+                    1. <ins>If _resolution_.[[Names]] is ~all~ or _starResolution_.[[Names]] is ~all~, then</ins>
+                      1. <ins>If _resolution_.[[Names]] is not _starResolution_.[[Names]], return ~ambiguous~.</ins>
+                    1. <ins>Else,</ins>
+                      1. <ins>If _resolution_.[[Names]] and _starResolution_.[[Names]] do not contain the same elements in the same order, return ~ambiguous~.</ins>
               1. Return _starResolution_.
             </emu-alg>
 
@@ -2512,27 +2465,16 @@ contributors: Nicolò Ribaudo
                   1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
                   1. If _resolution_.[[BindingName]] is ~namespace~ or ~deferred-namespace~, then
                     1. If _resolution_.[[BindingName]] is ~namespace~ let _phase_ be ~evaluation~, else let _phase_ be ~defer~.
-                    1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], _phase_, <ins>~all~</ins>).
+                    1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], _phase_, <ins>_resolution_.[[Names]]</ins>).
                     1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
                     1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
                   1. Else,
                     1. Perform CreateImportBinding(_env_, _in_.[[LocalName]], _resolution_.[[Module]], _resolution_.[[BindingName]]).
               1. <ins>For each ExportEntry Record _ie_ of _module_.[[IndirectExportEntries]], do</ins>
                 1. <ins>If _ie_.[[ImportName]] is ~filtered-namespace~, then</ins>
-                  1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _ie_.[[ExportName]], and *"\*"*.</ins>
                   1. <ins>Let _importedModule_ be GetImportedModule(_module_, _ie_.[[ModuleRequest]]).</ins>
                   1. <ins>For each String _name_ of _ie_.[[NamespaceNamesFilter]], perform ? EnsureResolvableBinding(_importedModule_, _name_, ~disallow-ambiguous~).</ins>
-                  1. <ins>Let _filteredNamespace_ be be GetModuleNamespace(_importedModule_, _ie_.[[ModuleRequest]].[[Phase]], _ie_.[[NamespaceNamesFilter]]).</ins>
-                  1. <ins>Perform ! _env_.CreateImmutableBinding(_localName_, *true*).</ins>
-                  1. <ins>Perform ! _env_.InitializeBinding(_localName_, _filteredNamespace_).</ins>
-              1. <ins>For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do</ins>
-                1. <ins>If _oie_.[[ImportName]] is ~filtered-namespace~, then</ins>
-                  1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _oie_.[[ExportName]], and *"\*"*.</ins>
-                  1. <ins>Let _initializationSteps_ be a new Abstract Closure with no parameters that captures _module_ and _oie_ and performs the following steps when called:</ins>
-                    1. <ins>Let _importedModule_ be GetImportedModule(_module_, _oie_.[[ModuleRequest]]).</ins>
-                    1. <ins>Return GetModuleNamespace(_importedModule_, _oie_.[[ModuleRequest]].[[Phase]], _oie_.[[NamespaceNamesFilter]]).</ins>
-                  1. <ins>Perform CreateDeferredInitializationBinding(_env_, _localName_, _initializationSteps_).</ins>
-                  1. <ins>NOTE: The _localName_ binding of `export defer { ...} as ns from "mod"` is initialized on first access, as whether the corresponding module is available or not depends on _module_'s importers. If any of _module_'s importers causes this binding to be imported, they will also validate it through EnsureResolvableBinding.</ins>
+                  1. <ins>NOTE: `export defer { ... } as ns from "mod"` declarations are not validated here, as whether the corresponding module is available or not depends on _module_'s importers. If any of _module_'s importers causes `ns` to be imported, they validate it through EnsureResolvableBinding.</ins>
               1. Let _moduleContext_ be a new ECMAScript code execution context.
               1. Set the Function of _moduleContext_ to *null*.
               1. Assert: _module_.[[Realm]] is not *undefined*.
@@ -2672,15 +2614,20 @@ contributors: Nicolò Ribaudo
         </h1>
         <dl class="header">
           <dt>description</dt>
-          <dd>It retrieves the Module Namespace Object representing _module_'s exports, lazily creating it the first time it was requested, and <ins>if _importedNames_ is ~all~</ins> storing it in _module_.[[Namespace]] for future retrieval.</dd>
+          <dd>It retrieves the Module Namespace Object representing _module_'s exports<ins>, or the subset of them listed in _importedNames_</ins>, lazily creating it the first time it was requested, and storing it in _module_.[[Namespace]]<ins>, _module_.[[DeferredNamespace]], or _module_.[[FilteredNamespaces]]</ins> for future retrieval.</dd>
         </dl>
 
         <emu-alg>
           1. Assert: If _module_ is a Cyclic Module Record, then _module_.[[Status]] is not ~new~ or ~unlinked~.
+          1. <ins>Assert: If _importedNames_ is a List, it is sorted according to lexicographic code unit order.</ins>
           1. <ins>Let _namespace_ be ~empty~.</ins>
           1. <ins>If _importedNames_ is ~all~, then</ins>
             1. If _phase_ is ~defer~, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[DeferredNamespace]].
             1. Else, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[Namespace]].
+          1. <ins>Else,</ins>
+            1. <ins>If _phase_ is ~defer~, let _deferred_ be *true*; else let _deferred_ be *false*.</ins>
+            1. <ins>For each Record { [[Names]], [[Namespace]] } _r_ of _module_.[[FilteredNamespaces]], do</ins>
+              1. <ins>If _r_.[[Namespace]].[[Deferred]] is _deferred_ and _r_.[[Names]] and _importedNames_ contain the same elements in the same order, set _namespace_ to _r_.[[Namespace]].</ins>
           1. If _namespace_ is ~empty~, then
             1. Let _exportedNames_ be _module_.GetExportedNames().
             1. Let _unambiguousNames_ be a new empty List.
@@ -2693,6 +2640,8 @@ contributors: Nicolò Ribaudo
             1. <ins>If _importedNames_ is ~all~, then</ins>
               1. <ins>If _phase_ is ~defer~, set _module_.[[DeferredNamespace]] to _namespace_.</ins>
               1. <ins>Else, set _module_.[[Namespace]] to _namespace_.</ins>
+            1. <ins>Else,</ins>
+              1. <ins>Append the Record { [[Names]]: _importedNames_, [[Namespace]]: _namespace_ } to _module_.[[FilteredNamespaces]].</ins>
           1. Return _namespace_.
         </emu-alg>
         <emu-note>
@@ -2879,7 +2828,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar><ins>NameSpaceImport : NamedImports `as` ImportedBinding</ins></emu-grammar>
         <emu-alg>
           1. <ins>Let _localName_ be the StringValue of |ImportedBinding|.</ins>
-          1. <ins>Let _importedNames_ be the ImportedNames of |NamedImports|.</ins>
+          1. <ins>Let _importedNames_ be a List whose elements are the elements of the ImportedNames of |NamedImports|, sorted according to lexicographic code unit order.</ins>
           1. <ins>Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~filtered-namespace-object~, [[LocalName]]: _localName_, [[NamespaceNamesFilter]]: _importedNames_ }.</ins>
           1. <ins>Return « _entry_ ».</ins>
         </emu-alg>
@@ -3361,7 +3310,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
         <emu-alg>
           1. <ins>Let _exportName_ be the StringValue of |ModuleExportName|.</ins>
-          1. <ins>Let _importedNames_ be the ImportedNames of |NamedExports|.</ins>
+          1. <ins>Let _importedNames_ be a List whose elements are the elements of the ImportedNames of |NamedExports|, sorted according to lexicographic code unit order.</ins>
           1. <ins>Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~filtered-namespace~, [[LocalName]]: *null*, [[ExportName]]: _exportName_, [[NamespaceNamesFilter]]: _importedNames_ }.</ins>
           1. <ins>Return « _entry_ ».</ins>
         </emu-alg>
