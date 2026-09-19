@@ -370,6 +370,17 @@ import defer { add, mul } as math from "./math.js";
 const math2 = await import.defer("./math.js", { exports: ["add", "mul"] });
 ```
 
+By the same symmetry, re-exporting a namespace with `export defer` creates a deferred namespace: the dependency is only loaded when the namespace is imported, and only executed when one of its exports is accessed.
+```js
+// index.js
+export defer * as math from "./math.js";
+export defer { add, sub } as arith from "./math.js";
+```
+```js
+import { arith } from "./index.js"; // Loads ./math.js and its dependencies, no execution
+arith.add; // Executes ./math/add.js and ./math.js
+```
+
 ### Comparison with `package.json#exports`
 
 Originally introduced by Node.js but now recognized by multiple build tools, `package.json#exports` allows defining the entry points of a JavaScript package ([docs](https://nodejs.org/api/packages.html#package-entry-points)).
