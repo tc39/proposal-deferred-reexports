@@ -2890,13 +2890,19 @@ contributors: Nicolò Ribaudo
           1. Let _specs2_ be the ImportEntriesForModule of |ImportSpecifier| with argument _module_.
           1. Return the list-concatenation of _specs1_ and _specs2_.
         </emu-alg>
-        <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
+        <emu-grammar>
+          <del>ImportSpecifier : ImportedBinding</del>
+          <ins>ImportSpecifier : ModuleExportName</ins>
+        </emu-grammar>
         <emu-alg>
-          1. Let _localName_ be the sole element of the BoundNames of |ImportedBinding|.
+          1. Let _localName_ be <del>the sole element of the BoundNames of |ImportedBinding|</del> <ins>the StringValue of |ModuleExportName|.</ins>
           1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _localName_, [[LocalName]]: _localName_<ins>, [[NamespaceNamesFilter]]: ~empty~</ins> }.
           1. Return « _entry_ ».
         </emu-alg>
-        <emu-grammar>ImportSpecifier : ModuleExportName `as` ImportedBinding</emu-grammar>
+        <emu-grammar>
+          <del>ImportSpecifier : ModuleExportName `as` ImportedBinding</del>
+          <ins>AliasedImportSpecifier : ModuleExportName `as` ImportedBinding</ins>
+        </emu-grammar>
         <emu-alg>
           1. Let _importName_ be the StringValue of |ModuleExportName|.
           1. Let _localName_ be the StringValue of |ImportedBinding|.
@@ -2947,12 +2953,18 @@ contributors: Nicolò Ribaudo
           1. Let _names2_ be ImportedNames of |ImportSpecifier|.
           1. Return MergeImportedNames(_names1_, _names2_).
         </emu-alg>
-        <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
+        <emu-grammar>
+          <del>ImportSpecifier : ImportedBinding</del>
+          <ins>ImportSpecifier : ModuleExportName</ins>
+        </emu-grammar>
         <emu-alg>
-          1. Let _importedName_ be the StringValue of |ImportedBinding|.
+          1. Let _importedName_ be the StringValue of <del>|ImportedBinding|</del> <ins>|ModuleExportName|</ins>.
           1. Return « _importedName_ ».
         </emu-alg>
-        <emu-grammar>ImportSpecifier : ModuleExportName `as` ImportedBinding</emu-grammar>
+        <emu-grammar>
+          <del>ImportSpecifier : ModuleExportName `as` ImportedBinding</del>
+          <ins>AliasedImportSpecifier : ModuleExportName `as` ImportedBinding</ins>
+        </emu-grammar>
         <emu-alg>
           1. Let _importedName_ be the StringValue of |ModuleExportName|.
           1. Return « _importedName_ ».
@@ -2981,7 +2993,7 @@ contributors: Nicolò Ribaudo
           1. Let _importedName_ be the StringValue of |ModuleExportName|.
           1. Return « _importedName_ ».
         </emu-alg>
-        <emu-grammar>ExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
+        <emu-grammar>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
         <emu-alg>
           1. Let _importedName_ be the StringValue of the first |ModuleExportName|.
           1. Return « _importedName_ ».
@@ -3078,6 +3090,9 @@ contributors: Nicolò Ribaudo
           NamedImports : `{` `}`
           NamedExports : `{` `}`
         </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
         <emu-grammar>
           ImportsList : ImportsList `,` ImportSpecifier
         </emu-grammar>
@@ -3257,7 +3272,10 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a List whose sole element is the StringValue of |ModuleExportName|.
         </emu-alg>
-        <emu-grammar>ExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
+        <emu-grammar>
+          <del>ExportSpecifier : ModuleExportName `as` ModuleExportName</del>
+          <ins>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</ins>
+        </emu-grammar>
         <emu-alg>
           1. Return a List whose sole element is the StringValue of the second |ModuleExportName|.
         </emu-alg>
@@ -3383,7 +3401,10 @@ contributors: Nicolò Ribaudo
             1. Let _importName_ be _sourceName_.
           1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _importName_, [[LocalName]]: _localName_, [[ExportName]]: _sourceName_, <ins>[[NamespaceNamesFilter]]: ~empty~</ins> }.
         </emu-alg>
-        <emu-grammar>ExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
+        <emu-grammar>
+          <del>ExportSpecifier : ModuleExportName `as` ModuleExportName</del>
+          <ins>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</ins>
+        </emu-grammar>
         <emu-alg>
           1. Let _sourceName_ be the StringValue of the first |ModuleExportName|.
           1. Let _exportName_ be the StringValue of the second |ModuleExportName|.
