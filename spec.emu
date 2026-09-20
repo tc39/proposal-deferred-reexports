@@ -1597,7 +1597,7 @@ contributors: Nicolò Ribaudo
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd>It returns a list of the ModuleRequest Records corresponding to optional indirect exports of _module_ that were not previously imported.</dd>
+            <dd>It returns the Module Requests for the `export defer` dependencies of _module_ needed for the names in _importedNames_ that have not already been requested from _module_, and records those names in _previouslyImportedNames_.</dd>
           </dl>
 
           <emu-alg>
