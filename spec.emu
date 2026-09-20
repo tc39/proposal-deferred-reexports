@@ -77,7 +77,7 @@ contributors: Nicolò Ribaudo
           </dl>
           <emu-alg>
             1. Assert: _envRec_ does not already have a binding for _name_.
-            1. Create an imutable deferred initialization binding in _envRec_ for _name_ whose deferred initialization steps is _initializationSteps_, and record that the binding is uninitialized and that it is a strict binding.
+            1. Create an immutable deferred initialization binding in _envRec_ for _name_ whose deferred initialization steps is _initializationSteps_, and record that the binding is uninitialized and that it is a strict binding.
             1. Return ~unused~.
           </emu-alg>
         </emu-clause>
@@ -699,7 +699,7 @@ contributors: Nicolò Ribaudo
               <td>
                 <p>It prepares the module for evaluation by transitively resolving all module dependencies and creating a Module Environment Record.</p>
                 <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names whose additional modules need to be linked, for usage with GetOptionalIndirectExportsModuleRequests(). By default, all modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are linked.</ins></p>
-                <p>LoadRequestedModules must have completed successfully prior to invoking this method<ins>, with an _importNames_ list that includes at least the _importedNames_ passed to Link</ins>.</p>
+                <p>LoadRequestedModules must have completed successfully prior to invoking this method<ins>, with an _importedNames_ list that includes at least the _importedNames_ passed to Link</ins>.</p>
               </td>
               <td>
                 Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
@@ -715,7 +715,7 @@ contributors: Nicolò Ribaudo
               <td>
                 <p>It returns a promise for the evaluation of this module and its dependencies, resolving on successful evaluation or if it has already been evaluated successfully, and rejecting for an evaluation error or if it has already been evaluated unsuccessfully. If the promise is rejected, hosts are expected to handle the promise rejection and rethrow the evaluation error. Unless this module is a Cyclic Module Record, the returned promise must be already settled.</p>
                 <p><ins>When this module is a Cyclic Module Record, _importedNames_ is the list of binding names whose additional modules need to be evaluated, for usage with GetOptionalIndirectExportsModuleRequests(). By default, modules re-exported by this module through GetOptionalIndirectExportsModuleRequests() are not evaluated.</ins></p>
-                <p>Link must have completed successfully prior to invoking this method<ins>, with an _importNames_ list that includes at least the _importedNames_ passed to Evaluate</ins>.</p>
+                <p>Link must have completed successfully prior to invoking this method<ins>, with an _importedNames_ list that includes at least the _importedNames_ passed to Evaluate</ins>.</p>
               </td>
               <td>
                 Within this specification it has definitions in the following types; hosts may provide additional types with their own definitions:
@@ -810,7 +810,7 @@ contributors: Nicolò Ribaudo
               1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
               1. Assert: _module_.[[Status]] is ~linked~ or ~evaluated~.
               1. If _module_.[[HasTLA]] is *true*, return *false*.
-              1. <ins>Let _requests_ be the list-concatenation of _module_.[[RequestedModules]] and _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_ ).</ins>
+              1. <ins>Let _requests_ be the list-concatenation of _module_.[[RequestedModules]] and _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
               1. For each ModuleRequest Record _request_ of <del>_module_.[[RequestedModules]]</del><ins>_requests_</ins>, do
                 1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
                 1. If ReadyForSyncExecution(_requiredModule_, <ins>_request_.[[ImportedNames]],</ins> _seen_) is *false*, then
@@ -1372,7 +1372,7 @@ contributors: Nicolò Ribaudo
               1. <del>Return _capability_.[[Promise]].</del>
               1. <ins>Let _topLevelPromise_ be _capability_.[[Promise]].</ins>
             1. <ins>If _topLevelPromise_.[[PromiseState]] is ~rejected~, return _topLevelPromise_.</ins>
-            1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_ ).</ins>
+            1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
             1. <ins>Let _promises_ be « _topLevelPromise_ ».</ins>
             1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
@@ -1501,7 +1501,7 @@ contributors: Nicolò Ribaudo
             </emu-alg>
 
             <emu-note>
-              <p>Step <emu-xref href="#step-BuildEvaluationList-all-importedNames"></emu-xref> is true when there's `import *`. For such case, only asynchronous transitive dependencies of modules loaded through `export defer` are evaluated at this point, while synchronous dependecies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
+              <p>Step <emu-xref href="#step-BuildEvaluationList-all-importedNames"></emu-xref> is true when there's `import *`. For such case, only asynchronous transitive dependencies of modules loaded through `export defer` are evaluated at this point, while synchronous dependencies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding.</p>
             </emu-note>
 
             <emu-note>
@@ -2514,7 +2514,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>Let _localName_ be the string-concatenation of *"\*"*, _ie_.[[ExportName]], and *"\*"*.</ins>
                   1. <ins>Let _importedModule_ be GetImportedModule(_module_, _ie_.[[ModuleRequest]]).</ins>
                   1. <ins>For each String _name_ of _ie_.[[NamespaceNamesFilter]], perform ? EnsureResolvableBinding(_importedModule_, _name_, ~disallow-ambiguous~).</ins>
-                  1. <ins>Let _filteredNamespace_ be be GetModuleNamespace(_importedModule_, _ie_.[[ModuleRequest]].[[Phase]], _ie_.[[NamespaceNamesFilter]]).</ins>
+                  1. <ins>Let _filteredNamespace_ be GetModuleNamespace(_importedModule_, _ie_.[[ModuleRequest]].[[Phase]], _ie_.[[NamespaceNamesFilter]]).</ins>
                   1. <ins>Perform ! _env_.CreateImmutableBinding(_localName_, *true*).</ins>
                   1. <ins>Perform ! _env_.InitializeBinding(_localName_, _filteredNamespace_).</ins>
               1. <ins>For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do</ins>
@@ -2571,10 +2571,10 @@ contributors: Nicolò Ribaudo
               </h1>
               <dl class="header">
                 <dt>description</dt>
-                <dd>It throws an error if _module_ does not have unabiguous exports for all _names_.</dd>
+                <dd>It throws an error if _module_ does not have unambiguous exports for _name_.</dd>
               </dl>
               <emu-alg>
-                1. Let _resolution_ be _module_.ResolveExport(_names_).
+                1. Let _resolution_ be _module_.ResolveExport(_name_).
                 1. If _resolution_ is *null*, throw a *SyntaxError* exception.
                 1. If _onAmbiguous_ is ~disallow-ambiguous~, then
                   1. If _resolution_ is ~ambiguous~, throw a *SyntaxError* exception.
