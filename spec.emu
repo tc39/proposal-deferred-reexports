@@ -2571,7 +2571,7 @@ contributors: Nicolò Ribaudo
               </h1>
               <dl class="header">
                 <dt>description</dt>
-                <dd>It throws an error if _module_ does not have unambiguous exports for _name_.</dd>
+                <dd>It throws an error if _module_ does not have an unambiguous export for _name_.</dd>
               </dl>
               <emu-alg>
                 1. Let _resolution_ be _module_.ResolveExport(_name_).
