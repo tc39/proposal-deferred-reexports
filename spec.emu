@@ -1585,7 +1585,7 @@ contributors: Nicolò Ribaudo
           </emu-clause>
         </emu-clause>
 
-        <emu-clause id="sec-GetNewOptionalIndirectExportsModuleRequests" type="abstract operation" number="100">
+        <emu-clause id="sec-GetNewOptionalIndirectExportsModuleRequests" type="abstract operation">
           <h1>
             <ins>
               GetNewOptionalIndirectExportsModuleRequests (
@@ -1597,7 +1597,7 @@ contributors: Nicolò Ribaudo
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd></dd>
+            <dd>It returns a list of the ModuleRequest Records corresponding to optional indirect exports of _module_ that were not previously imported.</dd>
           </dl>
 
           <emu-alg>
