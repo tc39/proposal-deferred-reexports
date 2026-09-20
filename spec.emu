@@ -2375,12 +2375,23 @@ contributors: Nicolò Ribaudo
               <dl class="header"></dl>
               <emu-alg>
                 1. Let _exportedNames_ be a new empty List.
-                1. Let _allNamedExportEntries_ be the list-concatenation of _module_.[[LocalExportEntries]], _module_.[[IndirectExportEntries]], and _module_.[[OptionalIndirectExportEntries]].
-                1. For each ExportEntry Record _e_ of _allNamedExportEntries_, do
-                  1. Assert: _e_.[[ExportName]] is not *null*.
-                  1. Append _e_.[[ExportName]] to _exportedNames_.
-                1. Return _exportedNames_.
+                1. For each ExportEntry Record _exportEntry_ of _module_.[[LocalExportEntries]], do
+                  1. Assert: _module_ provides the direct binding for this export.
+                  1. Assert: _exportEntry_.[[ExportName]] is not *null*.
+                  1. Append _exportEntry_.[[ExportName]] to _exportedNames_.
+                1. For each ExportEntry Record _exportEntry_ of _module_.[[IndirectExportEntries]], do
+                  1. Assert: _module_ imports a specific binding for this export.
+                  1. Assert: _exportEntry_.[[ExportName]] is not *null*.
+                  1. Append _exportEntry_.[[ExportName]] to _exportedNames_.
+                1. <ins>For each ExportEntry Record _exportEntry_ of _module_.[[OptionalIndirectExportEntries]], do</ins>
+                  1. <ins>If _exportEntry_.[[ExportName]] is not *null*, then</ins>
+                    1. <ins>Assert: _module_ exposes an `export defer` binding for this export.</ins>
+                    1. <ins>Append _exportEntry_.[[ExportName]] to _exportedNames_.</ins>
+                1. <ins>Return _exportedNames_.</ins>
               </emu-alg>
+              <emu-note type="editor">
+                The steps not marked as <ins>new</ins> are copied over from GetExportedNames.
+              </emu-note>
             </emu-clause>
           </emu-clause>
 
