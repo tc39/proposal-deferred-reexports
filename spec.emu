@@ -677,7 +677,7 @@ contributors: Nicolò Ribaudo
                 ResolveExport (
                   _exportName_: a String,
                   optional _resolveSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),
-                  <ins>optional _deferNamespaceExportSet_: a List of Module Records,</ins>
+                  <ins>optional _deferNamespaceExportSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),</ins>
                 ): a ResolvedBinding Record, *null*, or ~ambiguous~
               </td>
               <td>
@@ -755,10 +755,10 @@ contributors: Nicolò Ribaudo
                 [[BindingName]]
               </td>
               <td>
-                a String or ~namespace~
+                a String, ~namespace~, <ins>or ~deferred-namespace~</ins>
               </td>
               <td>
-                The name of the binding within that module, or ~namespace~ if the export is the module's namespace object.
+                The name of the binding within that module, or ~namespace~ <ins>or ~deferred-namespace~</ins> if the export is the module's <ins>(deferred)</ins> namespace object.
               </td>
             </tr>
           </table>
@@ -1382,7 +1382,7 @@ contributors: Nicolò Ribaudo
               1. <ins>Append _innerPromise_ to _promises_.</ins>
             1. <ins>If _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
               1. <ins>NOTE: If all modules in the graph are synchronous, the usage of promises is an internal specification detail. In that case, we do not use SafePerformPromiseAll to keep returning an already settled promise.</ins>
-              1. <ins>Return SafePerformPromiseAll(CreateListIteratorRecord(_promises_)).</ins>
+              1. <ins>Return SafePerformPromiseAll(_promises_).</ins>
             1. <ins>Return _topLevelPromise_.</ins>
           </emu-alg>
 
@@ -2188,7 +2188,7 @@ contributors: Nicolò Ribaudo
                   *"mod"*
                 </td>
                 <td>
-                  ~all~
+                  ~namespace~
                 </td>
                 <td>
                   *null*
@@ -2373,7 +2373,7 @@ contributors: Nicolò Ribaudo
                     1. If _e_.[[ModuleRequest]].[[Phase]] is ~defer~, then
                       1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~ }.
                     1. Else,
-                      1. Assert: _e_.[[Phase]] is ~evaluation~.
+                      1. Assert: _e_.[[ModuleRequest]].[[Phase]] is ~evaluation~.
                       1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
                   1. <ins>Else if _e_.[[ImportName]] is ~filtered-namespace~, then</ins>
                     1. <ins>Assert: _e_.[[NamespaceNamesFilter]] is a List of Strings.</ins>
