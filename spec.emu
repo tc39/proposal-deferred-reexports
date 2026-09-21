@@ -115,8 +115,7 @@ contributors: Nicolò Ribaudo
           1. Let _exports_ be ? GetModuleExportsList(_obj_).
           1. If _exports_ does not contain _propertyKey_, return *undefined*.
           1. Let _module_ be _obj_.[[Module]].
-          1. <ins>If _module_ is a Cyclic Module Record and _module_.GetOptionalIndirectExportsModuleRequests(« _propertyKey_ ») is not empty, then</ins>
-            1. <ins>Perform ? EvaluateModuleSync(_module_, « _propertyKey_ »).</ins>
+          1. <ins>If _module_ is a Cyclic Module Record, perform ? EnsureDeferredExportEvaluated(_module_, _propertyKey_, « »).</ins>
           1. Let _binding_ be _module_.ResolveExport(_propertyKey_).
           1. Assert: _binding_ is a ResolvedBinding Record.
           1. Let _targetModule_ be _binding_.[[Module]].
@@ -132,6 +131,32 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>ResolveExport is side-effect free. Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result. An implementation might choose to pre-compute or cache the ResolveExport results for the [[Exports]] of each module namespace exotic object.</p>
         </emu-note>
+
+        <emu-clause id="sec-EnsureDeferredExportEvaluated" type="abstract operation">
+          <h1>
+            EnsureDeferredExportEvaluated (
+              _module_: a Cyclic Module Record,
+              _exportName_: a String,
+              _seen_: a List of Module Records
+            ): either a normal completion containing ~unused~ or a throw completion
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It evaluates the deferred export named _exportName_ on the module namespace exotic object for _module_.</dd>
+          </dl>
+          <emu-alg>
+            1. If _seen_ contains _module_, return ~unused~.
+            1. Append _module_ to _seen_.
+            1. Let _optional_ be _module_.GetOptionalIndirectExportsModuleRequests(« _exportName_ »).
+            1. For each OptionalModuleRequest Record _request_ of _optional_, do
+              1. Let _requestedModule_ be GetImportedModule(_module_, _request_).
+              1. If _request_.[[IsStarExport]] is *true*, then
+                1. Perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
+              1. Else,
+                1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[ImportedNames]]).
+            1. Return ~unused~.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-modulenamespacecreate" type="abstract operation">
@@ -416,6 +441,34 @@ contributors: Nicolò Ribaudo
               </td>
               <td>
                 <ins>The list of names imported from the requested module, used for filtering `export defer` declarations.</ins>
+              </td>
+            </tr>
+          </table>
+        </emu-table>
+
+        <p><ins>An <dfn id="optionalmodulerequest-record" variants="OptionalModuleRequest Records">OptionalModuleRequest Record</dfn> represents the request to import a module due to an optional indirect export (see <emu-xref href="#sec-GetOptionalIndirectExportsModuleRequests" title></emu-xref>) being imported. It is a ModuleRequest Record with the following additional fields:</ins></p>
+        <emu-table id="table-optionalmodulerequest-fields" caption="OptionalModuleRequest Record Fields">
+          <table>
+            <tr>
+              <th>
+                Field Name
+              </th>
+              <th>
+                Value Type
+              </th>
+              <th>
+                Meaning
+              </th>
+            </tr>
+            <tr>
+              <td>
+                [[IsStarExport]]
+              </td>
+              <td>
+                a Boolean
+              </td>
+              <td>
+                Indicates whether the request is not due to an own optional export, but due to the module re-exposing the requested module's optional exports. In Source Text Module Records this is done by `export * from` declarations.
               </td>
             </tr>
           </table>
@@ -1006,9 +1059,9 @@ contributors: Nicolò Ribaudo
             <tr id="abstract-getoptionalindirectexportsmodulerequests">
               <td>
                 <ins>
-                  GetOptionalIndirectExportsModuleRequests(
+                  GetOptionalIndirectExportsModuleRequests (
                     _importedNames_: ~all~ or a List of Strings,
-                  ): a List of ModuleRequest Records
+                  ): a List of OptionalModuleRequest Records
                 </ins>
               </td>
               <td>
@@ -2589,9 +2642,9 @@ contributors: Nicolò Ribaudo
           <emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="concrete method" number="3">
             <h1>
               <ins>
-                GetOptionalIndirectExportsModuleRequests(
+                GetOptionalIndirectExportsModuleRequests (
                   _importedNames_: ~all~ or a List of Strings,
-                ): a List of ModuleRequest Records
+                ): a List of OptionalModuleRequest Records
               </ins>
             </h1>
             <dl class="header">
@@ -2603,8 +2656,11 @@ contributors: Nicolò Ribaudo
               1. Let _requests_ be a new empty List.
               1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
                 1. Let _processEntry_ be *true*.
+                1. Let _isStarExport_ be *false*.
                 1. If _oie_.[[ImportName]] is ~all-but-default~, then
                   1. Let _newImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
+                  1. Set _isStarExport_ to *true*.
+                  1. NOTE: We are handling an `export * from "mod"` declaration. While it's not by itself an optional indirect export, it is treated as one because it may be re-exporting indirect exports of `"mod"`. It is marked as with [[IsStarExport]] in the resulting OptionalModuleRequest Record so that the evaluation logic can handle it appropriately.
                 1. Else if _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
                   1. Let _newImportedNames_ be ~all~.
                   1. Assert: _oie_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
@@ -2615,11 +2671,11 @@ contributors: Nicolò Ribaudo
                 1. If _processEntry_ is *true*, then
                   1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
                   1. Let _existingRequest_ be ~empty~.
-                  1. For each ModuleRequest Record _r_ of _requests_, do
-                    1. If _existingRequest_ is ~empty~ and ModuleRequestsKeyEqual(_r_, _nextRequest_) is *true* and _r_.[[Phase]] is _nextRequest_.[[Phase]], then
-                      1. Set _existingRequest_ to _r_.
+                  1. For each OptionalModuleRequest Record _request_ of _requests_, do
+                    1. If _existingRequest_ is ~empty~, ModuleRequestsKeyEqual(_request_, _nextRequest_) is *true*, _request_.[[Phase]] is _nextRequest_.[[Phase]], and _request_.[[IsStarExport]] is _isStarExport_, then
+                      1. Set _existingRequest_ to _request_.
                   1. If _existingRequest_ is ~empty~, then
-                    1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_ }.
+                    1. Let _request_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_, [[IsStarExport]]: _isStarExport_ }.
                     1. Append _request_ to _requests_.
                   1. Else,
                     1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
