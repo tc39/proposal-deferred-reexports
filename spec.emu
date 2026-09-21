@@ -1341,18 +1341,16 @@ contributors: Nicolò Ribaudo
             1. Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~.
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. <ins>If _importedNames_ is not present, set _importedNames_ to « ».</ins>
-            1. <del>If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then</del>
-              1. <del>If _module_.[[CycleRoot]] is not ~empty~, then</del>
-                1. <del>Set _module_ to _module_.[[CycleRoot]].</del>
-              1. <del>Else,</del>
-                1. <del>Assert: _module_.[[Status]] is ~evaluated~ and _module_.[[EvaluationError]] is a throw completion.</del>
-            1. <del>If _module_.[[TopLevelCapability]] is not ~empty~, then</del>
+            1. <ins>Let _originalModule_ be _module_.</ins>
+            1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
+              1. If _module_.[[CycleRoot]] is not ~empty~, then
+                1. Set _module_ to _module_.[[CycleRoot]].
+              1. Else,
+                1. Assert: _module_.[[Status]] is ~evaluated~ and _module_.[[EvaluationError]] is a throw completion.
+            1. If _module_.[[TopLevelCapability]] is not ~empty~, then
               1. <del>Return _module_.[[TopLevelCapability]].[[Promise]].</del>
-            1. <ins>If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then</ins>
-              1. <ins>Assert: _module_.[[CycleRoot]].[[TopLevelCapability]] is not ~empty~.</ins>
-              1. <ins>Let _topLevelPromise_ be _module_.[[CycleRoot]].[[TopLevelCapability]].[[Promise]].</ins>
+              1. <ins>Let _topLevelPromise_ be _module_.[[TopLevelCapability]].[[Promise]].</ins>
             1. <ins>Else,</ins>
-              1. <ins>Assert: _module_.[[CycleRoot]] and _module_.[[TopLevelCapability]] are ~empty~.</ins>
               1. Let _stack_ be a new empty List.
               1. Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).
               1. Set _module_.[[TopLevelCapability]] to _promiseCapability_.
@@ -1376,10 +1374,10 @@ contributors: Nicolò Ribaudo
               1. <del>Return _promiseCapability_.[[Promise]].</del>
               1. <ins>Let _topLevelPromise_ be _promiseCapability_.[[Promise]].</ins>
             1. <ins>If _topLevelPromise_.[[PromiseState]] is ~rejected~, return _topLevelPromise_.</ins>
-            1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
+            1. <ins>Let _optionalIndirectRequests_ be _originalModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
             1. <ins>Let _promises_ be « _topLevelPromise_ ».</ins>
             1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
-              1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
+              1. <ins>Let _requiredModule_ be GetImportedModule(_originalModule_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
               1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_request_.[[ImportedNames]]).</ins>
               1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
