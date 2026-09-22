@@ -153,7 +153,7 @@ contributors: Nicolò Ribaudo
               1. If _request_.[[IsStarExport]] is *true*, then
                 1. Perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
               1. Else,
-                1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[ImportedNames]]).
+                1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[ImportedNames]], _request_.[[FilteredNamespaceImportedNames]]).
             1. Return ~unused~.
           </emu-alg>
         </emu-clause>
@@ -223,7 +223,6 @@ contributors: Nicolò Ribaudo
           1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
           1. Let _attrs_ be a new empty List.
           1. <ins>Let _importedNames_ be ~all~.</ins>
-          1. <ins>Let _filteredNamespaceImportedNames_ be an empty List.</ins>
           1. If _options_ is not *undefined*, then
             1. If _options_ is not an Object, then
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
@@ -272,8 +271,7 @@ contributors: Nicolò Ribaudo
                 1. <ins>Else if _names_ does not contain _next_, then</ins>
                   1. <ins>Append _next_ to _names_.</ins>
               1. <ins>Set _importedNames_ to _names_.</ins>
-              1. <ins>Set _filteredNamespaceImportedNames_ to _names_.</ins>
-          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: _importedNames_, [[FilteredNamespaceImportedNames]]: _filteredNamespaceImportedNames_</ins> }.
+          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: « », [[FilteredNamespaceImportedNames]]: _importedNames_</ins> }.
           1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
@@ -439,7 +437,7 @@ contributors: Nicolò Ribaudo
                 <ins>[[ImportedNames]]</ins>
               </td>
               <td>
-                <ins>~all~ or a List of Strings</ins>
+                <ins>List of Strings or Empty</ins>
               </td>
               <td>
                 <ins>The list of names imported from the requested module, used for filtering `export defer` declarations.</ins>
@@ -450,7 +448,7 @@ contributors: Nicolò Ribaudo
                 <ins>[[FilteredNamespaceImportedNames]]</ins>
               </td>
               <td>
-                <ins>List of Strings</ins>
+                <ins>~all~ or a List of Strings</ins>
               </td>
               <td>
                 <ins>The list of names in the namespace from the requested module, used for filtering `export defer` declarations.</ins>
@@ -839,7 +837,8 @@ contributors: Nicolò Ribaudo
           <h1>
             EvaluateModuleSync (
               _module_: a Module Record,
-              <ins>optional _importedNames_: ~all~ or a List of Strings,</ins>
+              <ins>optional _importedNames_: List of Strings,</ins>
+              <ins>optional _namespaceImportedNames_: ~all~ or a List of Strings,</ins>
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
           <dl class="header">
@@ -849,7 +848,8 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. <ins>If _importedNames_ is not present, set _importedNames_ to « ».</ins>
-            1. If ReadyForSyncExecution(_module_, <ins>_importedNames_</ins>) is *false*, throw a *TypeError* exception.
+            1. <ins>Let _allImportedNames_ be MergeImportedNames(_importedNames_, _namespaceImportedNames_).</ins>
+            1. If ReadyForSyncExecution(_module_, <ins>_allImportedNames_</ins>) is *false*, throw a *TypeError* exception.
             1. Let _promise_ be _module_.Evaluate(<ins>_importedNames_</ins>).
             1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
             1. If _promise_.[[PromiseState]] is ~rejected~, then
@@ -886,11 +886,13 @@ contributors: Nicolò Ribaudo
                   1. If _module_.[[HasTLA]] is *true*, return *false*.
                   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-                    1. If ReadyForSyncExecution(_requiredModule_, <ins>_request_.[[ImportedNames]],</ins> _seen_) is *false*, then
+                    1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+                    1. If ReadyForSyncExecution(_requiredModule_, <ins>_allImportedNames_ ,</ins> _seen_) is *false*, then
                       1. Return *false*.
               1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _seen_), do</ins>
                 1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
-                1. <ins>If ReadyForSyncExecution(_requiredModule_, _request_.[[ImportedNames]], _seen_) is *false*, return *false*.</ins>
+                1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+                1. <ins>If ReadyForSyncExecution(_requiredModule_, _allImportedNames_, _seen_) is *false*, return *false*.</ins>
               1. Return *true*.
             </emu-alg>
           </emu-clause>
@@ -1240,9 +1242,11 @@ contributors: Nicolò Ribaudo
                 1. For each ModuleRequest Record _request_ of <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>, do
                   1. If AllImportAttributesSupported(_request_.[[Attributes]]) is *false*, then
                     1. Let _error_ be ThrowCompletion(a newly created *SyntaxError* object).
-                    1. Perform ContinueModuleLoading(_state_, _error_, <ins>_request_.[[ImportedNames]]</ins>).
+                    1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+                    1. Perform ContinueModuleLoading(_state_, _error_, <ins>_allImportedNames_</ins>).
                   1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsKeyEqual(_record_, _request_) is *true*, then
-                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>_request_.[[ImportedNames]]</ins>).
+                    1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>_allImportedNames_</ins>).
                   1. Else,
                     1. Perform HostLoadImportedModule(_module_, _request_, _state_.[[HostDefined]], _state_).
                     1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
@@ -1315,7 +1319,8 @@ contributors: Nicolò Ribaudo
             1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
-              1. <ins>If _requiredModule_.[[Status]] is ~unlinked~, perform ? _requiredModule_.Link(_request_.[[ImportedNames]]).</ins>
+              1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+              1. <ins>If _requiredModule_.[[Status]] is ~unlinked~, perform ? _requiredModule_.Link(_allImportedNames_).</ins>
             1. Return ~unused~.
           </emu-alg>
 
@@ -1392,7 +1397,8 @@ contributors: Nicolò Ribaudo
                     1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
+                  1. Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).
+                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _allImportedNames_, _previouslyImportedNames_).
                   1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
@@ -1455,8 +1461,7 @@ contributors: Nicolò Ribaudo
             1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_originalModule_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
-              1. <ins>Let _requestImportedNames_ be ExcludeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImportedNames]]).</ins>
-              1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_requestImportedNames_).</ins>
+              1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_request_.[[ImportedNames]]).</ins>
               1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
               1. <ins>Append _innerPromise_ to _promises_.</ins>
             1. <ins>If _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
@@ -1571,12 +1576,17 @@ contributors: Nicolò Ribaudo
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
-                  1. Let _importedNames_ be _request_.[[ImportedNames]].
-                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _importedNames_, _previouslyImportedNames_).
-                  1. [id="step-BuildEvaluationList-all-importedNames"] If _importedNames_ = ~all~, then
+                  1. Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImportedNames]]).
+                  1. [id="step-BuildEvaluationList-all-importedNames"] If _allImportedNames_ = ~all~, then
+                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _allImportedNames_, _previouslyImportedNames_).
                     1. Let _seen_ be a new empty List.
                     1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
                   1. Else,
+                    1. If _request_.[[FilteredNamespaceImportedNames]] is not empty, then
+                      1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[FilteredNamespaceImportedNames]], _previouslyImportedNames_).
+                      1. Let _seen_ be a new empty List.
+                      1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
+                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
                     1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
@@ -1664,7 +1674,8 @@ contributors: Nicolò Ribaudo
                   1. If _requiredModule_ is a Cyclic Module Record, then
                     1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
                       1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
-                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
+                    1. Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImportedNames]]).
+                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _allImportedNames_, _previouslyImportedNames_).
                     1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
                 1. Return _result_.
               </emu-alg>
@@ -2750,9 +2761,11 @@ contributors: Nicolò Ribaudo
             1. Else,
               1. Append the LoadedModuleRequest Record { [[Specifier]]: _moduleRequest_.[[Specifier]], [[Attributes]]: _moduleRequest_.[[Attributes]], [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
           1. If _payload_ is a GraphLoadingState Record, then
-            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>_moduleRequest_.[[ImportedNames]]</ins>).
+            1. <ins>Let _allImportedNames_ be MergeImportedNames(_moduleRequest_.[[ImportedNames]], _moduleRequest_.[[FilteredNamespaceImportedNames]]).</ins>
+            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>_allImportedNames_</ins>).
           1. Else,
-            1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]], <ins>_moduleRequest_.[[ImportedNames]]</ins>).
+            1. <ins>Let _allImportedNames_ be MergeImportedNames(_moduleRequest_.[[ImportedNames]], _moduleRequest_.[[FilteredNamespaceImportedNames]]).</ins>
+            1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]], <ins>_allImportedNames_</ins>).
           1. Return ~unused~.
         </emu-alg>
       </emu-clause>
