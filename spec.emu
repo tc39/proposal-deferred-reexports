@@ -328,7 +328,7 @@ contributors: Nicolò Ribaudo
               1. <ins>If _phase_ is ~defer~, let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</ins>
               1. <ins>Else, let _evaluationList_ be « _module_ ».</ins>
               1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
-              1. <ins>Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_module_, _optionalIndirectRequests_, « »)).</ins>
+              1. <ins>Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_module_, _optionalIndirectRequests_, « », « »)).</ins>
               1. <ins>If _evaluationList_ is empty, then</ins>
                 1. <ins>Assert: _phase_ is ~defer~.</ins>
                 1. <ins>Perform _fulfilledClosure_().</ins>
@@ -1480,7 +1480,7 @@ contributors: Nicolò Ribaudo
                 1. <del>Else if _evaluationList_ does not contain _requiredModule_, then</del>
                   1. <del>Append _requiredModule_ to _evaluationList_.</del>
               1. <ins>Let _evaluationList_ be « ».</ins>
-              1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _module_.[[RequestedModules]]).</ins>
+              1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _module_.[[RequestedModules]], « »).</ins>
               1. Append _module_ to _stack_.
               1. For each Module Record _requiredModule_ of _evaluationList_, do
                 1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
@@ -1532,6 +1532,7 @@ contributors: Nicolò Ribaudo
                   _evaluationList_: a list of Module Records,
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
+                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
                 ): ~unused~
               </ins>
             </h1>
@@ -1539,20 +1540,21 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
-                1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_.[[Specifier]]).
+                1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
                 1. If _request_.[[Phase]] is ~defer~, then
-                  1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_)).
+                  1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_, « », _previouslyImportedNames_)).
                 1. Else if _evaluationList_ does not contain _requiredModule_, then
                   1. Append _requiredModule_ to _evaluationList_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
+                  1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
+                    1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
                   1. Let _importedNames_ be _request_.[[ImportedNames]].
+                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _importedNames_, _previouslyImportedNames_).
                   1. [id="step-BuildEvaluationList-all-importedNames"] If _importedNames_ = ~all~, then
-                    1. Let _allOptionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
                     1. Let _seen_ be a new empty List.
-                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _allOptionalIndirectRequests_, _seen_)).
+                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
                   1. Else,
-                    1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).
-                    1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_).
+                    1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
 
@@ -1561,7 +1563,7 @@ contributors: Nicolò Ribaudo
             </emu-note>
 
             <emu-note>
-              <p>Unlike BuildLinkingList, this operation does not need to keep track of which names have already been imported from a given module. Module graphs where two modules have a recursive `export defer` between each other that would cause an infinite loop already fail when linking.</p>
+              <p>Like BuildLinkingList, this operation tracks which names have already been requested from each module in _previouslyImportedNames_, so that a module graph whose `export defer` declarations form a cycle terminates. Such graphs are not rejected when linking: `export defer * as self from "./self.js"`, for example, links successfully.</p>
             </emu-note>
 
             <emu-clause id="sec-ListAppendUnique" type="abstract operation">
@@ -1586,7 +1588,8 @@ contributors: Nicolò Ribaudo
             <h1>
               GatherAsynchronousTransitiveDependencies (
                 _module_: a Module Record,
-                optional _seen_: a List of Module Records
+                optional _seen_: a List of Module Records,
+                <ins>optional _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings)</ins>
               ): a List of Module Records
             </h1>
             <dl class="header">
@@ -1596,6 +1599,7 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. If _seen_ is not present, set _seen_ to a new empty List.
+              1. <ins>If _previouslyImportedNames_ is not present, set _previouslyImportedNames_ to a new empty List.</ins>
               1. <del>Let _result_ be a new empty List</del>.
               1. If _seen_ contains _module_, return <del>_result_</del><ins>a new empty List</ins>.
               1. Append _module_ to _seen_.
@@ -1610,7 +1614,7 @@ contributors: Nicolò Ribaudo
                 1. <del>For each Module Record _m_ of _additionalModules_, do</del>
                   1. <del>If _result_ does not contain _m_, append _m_ to _result_.</del>
               1. <del>Return _result_.</del>
-              1. <ins>Return GatherAsynchronousTransitiveDependenciesForRequests(_module_, _module_.[[RequestedModules]], _seen_).</ins>
+              1. <ins>Return GatherAsynchronousTransitiveDependenciesForRequests(_module_, _module_.[[RequestedModules]], _seen_, _previouslyImportedNames_).</ins>
             </emu-alg>
 
             <emu-clause id="sec-GatherAsynchronousTransitiveDependenciesForRequests" type="abstract operation">
@@ -1619,7 +1623,8 @@ contributors: Nicolò Ribaudo
                   GatherAsynchronousTransitiveDependenciesForRequests (
                     _referrer_: a Cyclic Module Record,
                     _moduleRequests_: a List of ModuleRequest Records,
-                    _seen_: a List of Module Records
+                    _seen_: a List of Module Records,
+                    _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings)
                   ): a List of Module Records
                 </ins>
               </h1>
@@ -1632,9 +1637,12 @@ contributors: Nicolò Ribaudo
                 1. Let _result_ be a new empty List.
                 1. For each ModuleRequest Record _request_ of _moduleRequests_, do
                   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
-                  1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_)).
-                  1. Let _optionalIndirectRequests_ be _requiredModule_.GetOptionalIndirectExportsModuleRequests(_request_.[[ImportedNames]]).
-                  1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_)).
+                  1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_, _previouslyImportedNames_)).
+                  1. If _requiredModule_ is a Cyclic Module Record, then
+                    1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
+                      1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
+                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
+                    1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
                 1. Return _result_.
               </emu-alg>
             </emu-clause>
@@ -2671,6 +2679,7 @@ contributors: Nicolò Ribaudo
                 1. Let _isStarExport_ be *false*.
                 1. If _oie_.[[ImportName]] is ~all-but-default~, then
                   1. Let _newImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
+                  1. If _newImportedNames_ is an empty List, set _processEntry_ to *false*.
                   1. Set _isStarExport_ to *true*.
                   1. NOTE: We are handling an `export * from "mod"` declaration. While it's not by itself an optional indirect export, it is treated as one because it may be re-exporting indirect exports of `"mod"`. It is marked as with [[IsStarExport]] in the resulting OptionalModuleRequest Record so that the evaluation logic can handle it appropriately.
                 1. Else if _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
