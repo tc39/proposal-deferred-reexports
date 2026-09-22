@@ -223,6 +223,7 @@ contributors: Nicolò Ribaudo
           1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
           1. Let _attrs_ be a new empty List.
           1. <ins>Let _importedNames_ be ~all~.</ins>
+          1. <ins>Let _filteredNamespaceImportedNames_ be an empty List.</ins>
           1. If _options_ is not *undefined*, then
             1. If _options_ is not an Object, then
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
@@ -271,7 +272,8 @@ contributors: Nicolò Ribaudo
                 1. <ins>Else if _names_ does not contain _next_, then</ins>
                   1. <ins>Append _next_ to _names_.</ins>
               1. <ins>Set _importedNames_ to _names_.</ins>
-          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: _importedNames_</ins> }.
+              1. <ins>Set _filteredNamespaceImportedNames_ to _names_.</ins>
+          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: _importedNames_, [[FilteredNamespaceImportedNames]]: _filteredNamespaceImportedNames_</ins> }.
           1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
@@ -443,6 +445,17 @@ contributors: Nicolò Ribaudo
                 <ins>The list of names imported from the requested module, used for filtering `export defer` declarations.</ins>
               </td>
             </tr>
+            <tr>
+              <td>
+                <ins>[[FilteredNamespaceImportedNames]]</ins>
+              </td>
+              <td>
+                <ins>List of Strings</ins>
+              </td>
+              <td>
+                <ins>The list of names in the namespace from the requested module, used for filtering `export defer` declarations.</ins>
+              </td>
+            </tr>
           </table>
         </emu-table>
 
@@ -502,6 +515,7 @@ contributors: Nicolò Ribaudo
               1. Append _moduleRequest_ to _requests_.
             1. <ins>Else,</ins>
               1. <ins>Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _moduleRequest_.[[ImportedNames]]).</ins>
+              1. <ins>Set _existingRequest_.[[FilteredNamespaceImportedNames]] to MergeImportedNames(_existingRequest_.[[FilteredNamespaceImportedNames]], _moduleRequest_.[[FilteredNamespaceImportedNames]]).</ins>
           1. Return _requests_.
         </emu-alg>
         <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
@@ -514,14 +528,16 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _specifier_ be the SV of |FromClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
+          1. <ins>Let _filteredNamespaceImportedNames_ be FilteredNamespaceImportedNames of |ImportClause|.</ins>
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: _importedNames_, [[FilteredNamespaceImportedNames]]: _filteredNamespaceImportedNames_</ins> }.
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause `;`</emu-grammar>
         <emu-alg>
           1. Let _specifier_ be the SV of |FromClause|.
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
+          1. <ins>Let _filteredNamespaceImportedNames_ be FilteredNamespaceImportedNames of |ImportClause|.</ins>
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: _importedNames_, [[FilteredNamespaceImportedNames]]: _filteredNamespaceImportedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`
@@ -529,7 +545,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _specifier_ be SV of |FromClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_, [[FilteredNamespaceImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`
@@ -538,7 +554,7 @@ contributors: Nicolò Ribaudo
           1. Let _specifier_ be SV of |FromClause|.
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _importedNames_ be ImportedNames of |NameSpaceImport|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: _importedNames_, [[FilteredNamespaceImportedNames]]: _importedNames_</ins> }.
         </emu-alg>
         <emu-grammar>
           ExportDeclaration : `export` ExportFromClause FromClause `;`
@@ -595,10 +611,11 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. Let _importedNames_ be ImportedNames of _exportFromClause_.
+            1. Let _filteredNamespaceImportedNames_ be FilteredNamespaceImportedNames of _exportFromClause_.
             1. Let _specifier_ be the SV of _fromClause_.
             1. If _withClause_ is present, let _attributes_ be WithClauseToAttributes of _withClause_.
             1. Else, let _attributes_ be « ».
-            1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: _phase_, [[ImportedNames]]: _importedNames_ }.
+            1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: _phase_, [[ImportedNames]]: _importedNames_, [[FilteredNamespaceImportedNames]]: _filteredNamespaceImportedNames_}.
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -1438,7 +1455,8 @@ contributors: Nicolò Ribaudo
             1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_originalModule_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
-              1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_request_.[[ImportedNames]]).</ins>
+              1. <ins>Let _requestImportedNames_ be ExcludeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImportedNames]]).</ins>
+              1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_requestImportedNames_).</ins>
               1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
               1. <ins>Append _innerPromise_ to _promises_.</ins>
             1. <ins>If _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
@@ -2701,10 +2719,11 @@ contributors: Nicolò Ribaudo
                     1. If _existingRequest_ is ~empty~, ModuleRequestsKeyEqual(_request_, _nextRequest_) is *true*, _request_.[[Phase]] is _nextRequest_.[[Phase]], and _request_.[[IsStarExport]] is _isStarExport_, then
                       1. Set _existingRequest_ to _request_.
                   1. If _existingRequest_ is ~empty~, then
-                    1. Let _request_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_, [[IsStarExport]]: _isStarExport_ }.
+                    1. Let _request_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: _newImportedNames_, [[FilteredNamespaceImportedNames]]: _oie_[[NamespaceNamesFilter]], [[IsStarExport]]: _isStarExport_ }.
                     1. Append _request_ to _requests_.
                   1. Else,
                     1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
+                    1. Set _existingRequest_.[[FilteredNamespaceImportedNames]] to MergeImportedNames(_existingRequest_.[[FilteredNamespaceImportedNames]], _oie_[[NamespaceNamesFilter]]).
               1. Return _requests_.
             </emu-alg>
           </emu-clause>
@@ -2876,6 +2895,18 @@ contributors: Nicolò Ribaudo
           </li>
           <li>
             <ins>It is a Syntax Error if the FilteredNamespaceNames of |NamedImports| contains any duplicate entries.</ins>
+          </li>
+        </ul>
+
+        <emu-grammar>
+          <ins>
+            ImportClause :
+              ImportedDefaultBinding `,` NameSpaceImport
+          </ins>
+        </emu-grammar>
+        <ul>
+          <li>
+            <ins>It's a Syntax Error if the FilteredNamespaceNames of |NameSpaceImport| contains *"default"*.</ins>
           </li>
         </ul>
 
@@ -3129,6 +3160,48 @@ contributors: Nicolò Ribaudo
             1. Return a new List containing all the elements of _a_ that are not also elements of _b_.
           </emu-alg>
         </emu-clause>
+      </emu-clause>
+
+      <emu-clause id="sec-FilteredNamespaceImportedNames" type="sdo">
+        <h1>
+          <ins>
+            Static Semantics: FilteredNamespaceImportedNames ( ): a List of unique Strings
+          </ins>
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd>It returns the names that are imported to build a filtered namespace object, that is the names listed in an `import { a, b } as ns from "mod"` declaration or in an `export { a, b } as ns from "mod"` declaration. It is an empty List for every other declaration.</dd>
+        </dl>
+        <emu-grammar>NameSpaceImport : NamedImports `as` ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Return the ImportedNames of |NamedImports|.
+        </emu-alg>
+        <emu-grammar>ExportFromClause : NamedExports `as` ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Return the ImportedNames of |NamedExports|.
+        </emu-alg>
+        <emu-grammar>ImportClause : ImportedDefaultBinding `,` NameSpaceImport</emu-grammar>
+        <emu-alg>
+          1. Return the FilteredNamespaceImportedNames of |NameSpaceImport|.
+        </emu-alg>
+        <emu-grammar>
+          ImportClause : ImportedDefaultBinding `,` NamedImports
+          ImportedDefaultBinding : ImportedBinding
+          NameSpaceImport : `*` `as` ImportedBinding
+          NamedImports : `{` `}`
+          ImportsList : ImportsList `,` ImportSpecifier
+          ImportSpecifier : ModuleExportName
+          AliasedImportSpecifier : ModuleExportName `as` ImportedBinding
+          ExportFromClause : `*`
+          ExportFromClause : `*` `as` ModuleExportName
+          NamedExports : `{` `}`
+          ExportsList : ExportsList `,` ExportSpecifier
+          ExportSpecifier : ModuleExportName
+          AliasedExportSpecifier : ModuleExportName `as` ModuleExportName
+        </emu-grammar>
+        <emu-alg>
+          1. Return « ».
+        </emu-alg>
       </emu-clause>
 
       <emu-clause id="sec-imports-LocalBindings" type="sdo">
