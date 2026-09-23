@@ -437,10 +437,10 @@ contributors: Nicolò Ribaudo
                 <ins>[[DirectImportedNames]]</ins>
               </td>
               <td>
-                <ins>List of Strings or Empty</ins>
+                <ins>List of Strings</ins>
               </td>
               <td>
-                <ins>The list of names imported from the requested module, used for filtering `export defer` declarations.</ins>
+                <ins>The list of non-namespace names imported from the requested module, used for filtering `export defer` declarations.</ins>
               </td>
             </tr>
             <tr>
@@ -451,7 +451,7 @@ contributors: Nicolò Ribaudo
                 <ins>~all~ or a List of Strings</ins>
               </td>
               <td>
-                <ins>The list of names in the namespace from the requested module, used for filtering `export defer` declarations.</ins>
+                <ins>The list of namespace names improted from the requested module, used for filtering `export defer` declarations.</ins>
               </td>
             </tr>
           </table>
@@ -850,6 +850,7 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. <ins>If _importedNames_ is not present, set _importedNames_ to « ».</ins>
+            1. <ins>If _namespaceImportedNames_ is not present, set _namespaceImportedNames_ to « ».</ins>
             1. <ins>Let _allImportedNames_ be MergeImportedNames(_importedNames_, _namespaceImportedNames_).</ins>
             1. If ReadyForSyncExecution(_module_, <ins>_allImportedNames_</ins>) is *false*, throw a *TypeError* exception.
             1. Let _promise_ be _module_.Evaluate(<ins>_importedNames_</ins>).
@@ -2909,18 +2910,6 @@ contributors: Nicolò Ribaudo
           </li>
         </ul>
 
-        <emu-grammar>
-          <ins>
-            ImportClause :
-              ImportedDefaultBinding `,` NameSpaceImport
-          </ins>
-        </emu-grammar>
-        <ul>
-          <li>
-            <ins>It's a Syntax Error if the FilteredNamespaceNames of |NameSpaceImport| contains *"default"*.</ins>
-          </li>
-        </ul>
-
         <emu-grammar>WithClause : `with` `{` WithEntries `,`? `}`</emu-grammar>
         <ul>
           <li>
@@ -3047,8 +3036,7 @@ contributors: Nicolò Ribaudo
         </dl>
         <emu-grammar>ImportClause : ImportedDefaultBinding `,` NameSpaceImport</emu-grammar>
         <emu-alg>
-          1. Let _names_ be the DirectImportedNames of |ImportedDefaultBinding|.
-          1. Return _names_.
+          1. Return the DirectImportedNames of |ImportedDefaultBinding|.
         </emu-alg>
         <emu-grammar>ImportClause : ImportedDefaultBinding `,` NamedImports</emu-grammar>
         <emu-alg>
@@ -3062,15 +3050,15 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>NameSpaceImport : `*` `as` ImportedBinding</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>NameSpaceImport : NamedImports `as` ImportedBinding</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>NamedImports : `{` `}`</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
         <emu-alg>
@@ -3097,15 +3085,15 @@ contributors: Nicolò Ribaudo
         <emu-grammar>ExportFromClause : `*`</emu-grammar>
         <emu-alg>
           1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>NamedExports : `{` `}`</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
         <emu-alg>
@@ -3193,7 +3181,7 @@ contributors: Nicolò Ribaudo
             ImportClause : ImportedDefaultBinding
         </emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>NameSpaceImport : `*` `as` ImportedBinding</emu-grammar>
         <emu-alg>
@@ -3205,7 +3193,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>NamedImports : `{` `}`</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
         <emu-alg>
@@ -3232,11 +3220,11 @@ contributors: Nicolò Ribaudo
         <emu-grammar>ExportFromClause : `*`</emu-grammar>
         <emu-alg>
           1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportFromClause : NamedExports</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
         <emu-alg>
@@ -3244,7 +3232,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>NamedExports : `{` `}`</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
         <emu-alg>
@@ -3259,7 +3247,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
         <emu-alg>
-          1. Return « ».
+          1. Return a new empty List.
         </emu-alg>
       </emu-clause>
 
