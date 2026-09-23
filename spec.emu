@@ -451,7 +451,7 @@ contributors: Nicolò Ribaudo
                 <ins>~all~ or a List of Strings</ins>
               </td>
               <td>
-                <ins>The list of namespace names improted from the requested module, used for filtering `export defer` declarations.</ins>
+                <ins>The list of namespace names imported from the requested module, used for filtering `export defer` declarations.</ins>
               </td>
             </tr>
           </table>
@@ -889,12 +889,12 @@ contributors: Nicolò Ribaudo
                   1. If _module_.[[HasTLA]] is *true*, return *false*.
                   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-                    1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+                    1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[NamespaceImportedNames]]).</ins>
                     1. If ReadyForSyncExecution(_requiredModule_, <ins>_allImportedNames_ ,</ins> _seen_) is *false*, then
                       1. Return *false*.
               1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _seen_), do</ins>
                 1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
-                1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+                1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[NamespaceImportedNames]]).</ins>
                 1. <ins>If ReadyForSyncExecution(_requiredModule_, _allImportedNames_, _seen_) is *false*, return *false*.</ins>
               1. Return *true*.
             </emu-alg>
