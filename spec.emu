@@ -854,7 +854,7 @@ contributors: Nicolò Ribaudo
           <h1>
             EvaluateModuleSync (
               _module_: a Module Record,
-              <ins>optional _importedNames_: List of Strings,</ins>
+              <ins>optional _directImportedNames_: List of Strings,</ins>
               <ins>optional _namespaceImportedNames_: ~all~ or a List of Strings,</ins>
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
@@ -864,11 +864,11 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. <ins>If _importedNames_ is not present, set _importedNames_ to « ».</ins>
+            1. <ins>If _directImportedNames_ is not present, set _directImportedNames_ to « ».</ins>
             1. <ins>If _namespaceImportedNames_ is not present, set _namespaceImportedNames_ to « ».</ins>
-            1. <ins>Let _allImportedNames_ be MergeImportedNames(_importedNames_, _namespaceImportedNames_).</ins>
+            1. <ins>Let _allImportedNames_ be MergeImportedNames(_directImportedNames_, _namespaceImportedNames_).</ins>
             1. If ReadyForSyncExecution(_module_, <ins>_allImportedNames_</ins>) is *false*, throw a *TypeError* exception.
-            1. Let _promise_ be _module_.Evaluate(<ins>_importedNames_</ins>).
+            1. Let _promise_ be _module_.Evaluate(<ins>_directImportedNames_</ins>).
             1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
             1. If _promise_.[[PromiseState]] is ~rejected~, then
               1. If _promise_.[[PromiseIsHandled]] is *false*, perform HostPromiseRejectionTracker(_promise_, *"handle"*).
@@ -1588,18 +1588,17 @@ contributors: Nicolò Ribaudo
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
-                  1. Else,
-                    1. [id="step-BuildEvaluationList-namespace-importedNames"] If _request_.[[NamespaceImportedNames]] is not empty, then
-                      1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
-                      1. Let _seen_ be a new empty List.
-                      1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
-                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _previouslyImportedNames_).
-                    1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
+                  1. [id="step-BuildEvaluationList-namespace-importedNames"] If _request_.[[NamespaceImportedNames]] is not empty, then
+                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
+                    1. Let _seen_ be a new empty List.
+                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
+                  1. [id="step-BuildEvaluationList-namespace-directImportedNames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _previouslyImportedNames_).
+                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
 
             <emu-note>
-                <p>Step <emu-xref href="#step-BuildEvaluationList-namespace-importedNames"></emu-xref> is true when there's a namespace import or export. For such case, only asynchronous transitive dependencies of modules loaded through `export defer` are evaluated at this point, while synchronous dependencies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding. If there's another non-namespace import happening, it'll be added to the evaluation list by the branch of `DirectImportedNames`, and this will get precedence over namespace's imported names.</p>
+              <p>Step <emu-xref href="#step-BuildEvaluationList-namespace-importedNames"></emu-xref> is true when there's a namespace import or export. For such case, only asynchronous transitive dependencies of modules loaded through `export defer` are evaluated at this point, while synchronous dependencies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding. If there's another non-namespace import importing same names from `[[NamespaceImportedNames]]`, they'll be added to the evaluation list on step <emu-xref href="#step-BuildEvaluationList-namespace-directImportedNames"></emu-xref>.</p>
             </emu-note>
 
             <emu-note>
@@ -3054,15 +3053,11 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return « *"default"* ».
         </emu-alg>
-        <emu-grammar>NameSpaceImport : `*` `as` ImportedBinding</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>NameSpaceImport : NamedImports `as` ImportedBinding</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>NamedImports : `{` `}`</emu-grammar>
+        <emu-grammar>
+            NameSpaceImport : `*` `as` ImportedBinding
+            NameSpaceImport : NamedImports `as` ImportedBinding
+            NamedImports : `{` `}`
+        </emu-grammar>
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
@@ -3093,11 +3088,10 @@ contributors: Nicolò Ribaudo
           1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>NamedExports : `{` `}`</emu-grammar>
+        <emu-grammar>
+            ExportFromClause : `*` `as` ModuleExportName
+            NamedExports : `{` `}`
+        </emu-grammar>
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
@@ -3228,17 +3222,17 @@ contributors: Nicolò Ribaudo
           1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportFromClause : NamedExports</emu-grammar>
+        <emu-grammar>
+            ExportFromClause : NamedExports
+            NamedExports : `{` `}`
+            AliasedExportSpecifier : ModuleExportName `as` ModuleExportName
+        </emu-grammar>
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
         <emu-alg>
           1. Return ~all~.
-        </emu-alg>
-        <emu-grammar>NamedExports : `{` `}`</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
         <emu-alg>
@@ -3250,10 +3244,6 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _importedName_ be the StringValue of |ModuleExportName|.
           1. Return « _importedName_ ».
-        </emu-alg>
-        <emu-grammar>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
         </emu-alg>
       </emu-clause>
 
