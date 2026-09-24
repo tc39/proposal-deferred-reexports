@@ -3088,6 +3088,11 @@ contributors: Nicolò Ribaudo
           1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
           1. Return a new empty List.
         </emu-alg>
+        <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>NOTE: The names are reached through the re-exported namespace object, so they are not directly imported.</ins>
+          1. <ins>Return a new empty List.</ins>
+        </emu-alg>
         <emu-grammar>
             ExportFromClause : `*` `as` ModuleExportName
             NamedExports : `{` `}`
@@ -3095,6 +3100,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
+
         <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
         <emu-alg>
           1. Let _names1_ be the DirectImportedNames of |ExportsList|.
@@ -3197,8 +3203,8 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
         <emu-alg>
-          1. Let _names1_ be FilterNamespaceImportedNames of |ImportsList|.
-          1. Let _names2_ be FilterNamespaceImportedNames of |ImportSpecifier|.
+          1. Let _names1_ be FilteredNamespaceImportedNames of |ImportsList|.
+          1. Let _names2_ be FilteredNamespaceImportedNames of |ImportSpecifier|.
           1. Return MergeImportedNames(_names1_, _names2_).
         </emu-alg>
         <emu-grammar>
@@ -3234,10 +3240,14 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return ~all~.
         </emu-alg>
+        <emu-grammar>ExportFromClause : NamedExports `as` ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Return the FilteredNamespaceImportedNames of |NamedExports|.
+        </emu-alg>
         <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
         <emu-alg>
-          1. Let _names1_ be the FilteredImportedNames of |ExportsList|.
-          1. Let _names2_ be the FilteredImportedNames of |ExportSpecifier|.
+          1. Let _names1_ be the FilteredNamespaceImportedNames of |ExportsList|.
+          1. Let _names2_ be the FilteredNamespaceImportedNames of |ExportSpecifier|.
           1. Return MergeImportedNames(_names1_, _names2_).
         </emu-alg>
         <emu-grammar>ExportSpecifier : ModuleExportName</emu-grammar>
@@ -3576,7 +3586,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
         <emu-alg>
           1. <ins>Let _exportName_ be the StringValue of |ModuleExportName|.</ins>
-          1. <ins>Let _importedNames_ be the ImportedNames of |NamedExports|.</ins>
+          1. <ins>Let _importedNames_ be the FilteredNamespaceImportedNames of |NamedExports|.</ins>
           1. <ins>Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~filtered-namespace~, [[LocalName]]: *null*, [[ExportName]]: _exportName_, [[NamespaceNamesFilter]]: _importedNames_ }.</ins>
           1. <ins>Return « _entry_ ».</ins>
         </emu-alg>
