@@ -2709,16 +2709,18 @@ contributors: Nicolò Ribaudo
                 1. Let _processEntry_ be *true*.
                 1. Let _isStarExport_ be *false*.
                 1. If _oie_.[[ImportName]] is ~all-but-default~, then
-                  1. Let _newImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
-                  1. If _newImportedNames_ is an empty List, set _processEntry_ to *false*.
+                  1. Let _newDirectImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
+                  1. Let _newNamespaceImportedNames_ be « ».
+                  1. If _newDirectImportedNames_ is an empty List, set _processEntry_ to *false*.
                   1. Set _isStarExport_ to *true*.
                   1. NOTE: We are handling an `export * from "mod"` declaration. While it's not by itself an optional indirect export, it is treated as one because it may be re-exporting indirect exports of `"mod"`. It is marked as with [[IsStarExport]] in the resulting OptionalModuleRequest Record so that the evaluation logic can handle it appropriately.
                 1. Else if _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
                   1. Let _newDirectImportedNames_ be « ».
-                  1. Let _newNamespaceImportedNames_ be ~all~.
+                  1. Let _newNamespaceImportedNames_ be « ».
                   1. Assert: _oie_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
                   1. If _oie_.[[ImportName]] is a String, set _newDirectImportedNames_ to « _oie_.[[ImportName]] ».
-                  1. If _oie_.[[ImportName]] is ~filtered-namespace~, set _newNamespaceImportedNames_ to _oie_.[[NamespaceNamesFilter]].
+                  1. Else if _oie_.[[ImportName]] is ~filtered-namespace~, set _newNamespaceImportedNames_ to _oie_.[[NamespaceNamesFilter]].
+                  1. Else, set _newNamespaceImportedNames_ to ~all~.
                 1. Else,
                   1. Set _processEntry_ to *false*.
                 1. If _processEntry_ is *true*, then
