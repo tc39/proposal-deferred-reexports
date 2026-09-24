@@ -451,7 +451,7 @@ contributors: Nicolò Ribaudo
                 <ins>~all~ or a List of Strings</ins>
               </td>
               <td>
-                <ins>The list of namespace names improted from the requested module, used for filtering `export defer` declarations.</ins>
+                <ins>The list of namespace names imported from the requested module, used for filtering `export defer` declarations.</ins>
               </td>
             </tr>
           </table>
@@ -889,12 +889,12 @@ contributors: Nicolò Ribaudo
                   1. If _module_.[[HasTLA]] is *true*, return *false*.
                   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-                    1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
-                    1. If ReadyForSyncExecution(_requiredModule_, <ins>_allImportedNames_ ,</ins> _seen_) is *false*, then
+                    1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[DirectImportedNames]], _request_.[[NamespaceImportedNames]]).</ins>
+                    1. If ReadyForSyncExecution(_requiredModule_, <ins>_allImportedNames_,</ins> _seen_) is *false*, then
                       1. Return *false*.
               1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _seen_), do</ins>
                 1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
-                1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[ImportedNames]], _request_.[[FilteredNamespaceImprotedNames]]).</ins>
+                1. <ins>Let _allImportedNames_ be MergeImportedNames(_request_.[[DirectImportedNames]], _request_.[[NamespaceImportedNames]]).</ins>
                 1. <ins>If ReadyForSyncExecution(_requiredModule_, _allImportedNames_, _seen_) is *false*, return *false*.</ins>
               1. Return *true*.
             </emu-alg>
@@ -1579,13 +1579,12 @@ contributors: Nicolò Ribaudo
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
-                  1. Else,
-                    1. [id="step-BuildEvaluationList-namespace-importedNames"] If _request_.[[NamespaceImportedNames]] is not empty, then
-                      1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
-                      1. Let _seen_ be a new empty List.
-                      1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
-                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _previouslyImportedNames_).
-                    1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
+                  1. [id="step-BuildEvaluationList-namespace-importedNames"] If _request_.[[NamespaceImportedNames]] is not ~all~ and _request_.[[NamespaceImportedNames]] is not an empty List, then
+                    1. Let _namespaceRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
+                    1. Let _seen_ be a new empty List.
+                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceRequests_, _seen_, _previouslyImportedNames_)).
+                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _previouslyImportedNames_).
+                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
 
@@ -3091,6 +3090,11 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
+        <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>NOTE: The names are reached through the re-exported namespace object, so they are not directly imported.</ins>
+          1. <ins>Return a new empty List.</ins>
+        </emu-alg>
         <emu-grammar>NamedExports : `{` `}`</emu-grammar>
         <emu-alg>
           1. Return a new empty List.
@@ -3197,8 +3201,8 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
         <emu-alg>
-          1. Let _names1_ be FilterNamespaceImportedNames of |ImportsList|.
-          1. Let _names2_ be FilterNamespaceImportedNames of |ImportSpecifier|.
+          1. Let _names1_ be FilteredNamespaceImportedNames of |ImportsList|.
+          1. Let _names2_ be FilteredNamespaceImportedNames of |ImportSpecifier|.
           1. Return MergeImportedNames(_names1_, _names2_).
         </emu-alg>
         <emu-grammar>
@@ -3230,14 +3234,18 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return ~all~.
         </emu-alg>
+        <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>Return the FilteredNamespaceImportedNames of |NamedExports|.</ins>
+        </emu-alg>
         <emu-grammar>NamedExports : `{` `}`</emu-grammar>
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
         <emu-alg>
-          1. Let _names1_ be the FilteredImportedNames of |ExportsList|.
-          1. Let _names2_ be the FilteredImportedNames of |ExportSpecifier|.
+          1. Let _names1_ be the FilteredNamespaceImportedNames of |ExportsList|.
+          1. Let _names2_ be the FilteredNamespaceImportedNames of |ExportSpecifier|.
           1. Return MergeImportedNames(_names1_, _names2_).
         </emu-alg>
         <emu-grammar>ExportSpecifier : ModuleExportName</emu-grammar>
@@ -3580,7 +3588,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
         <emu-alg>
           1. <ins>Let _exportName_ be the StringValue of |ModuleExportName|.</ins>
-          1. <ins>Let _importedNames_ be the ImportedNames of |NamedExports|.</ins>
+          1. <ins>Let _importedNames_ be the FilteredNamespaceImportedNames of |NamedExports|.</ins>
           1. <ins>Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~filtered-namespace~, [[LocalName]]: *null*, [[ExportName]]: _exportName_, [[NamespaceNamesFilter]]: _importedNames_ }.</ins>
           1. <ins>Return « _entry_ ».</ins>
         </emu-alg>
