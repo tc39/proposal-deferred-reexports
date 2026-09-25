@@ -76,11 +76,12 @@ contributors: Nicolò Ribaudo
             1. Append _module_ to _seen_.
             1. Let _optional_ be _module_.GetOptionalIndirectExportsModuleRequests(« _exportName_ »).
             1. For each OptionalModuleRequest Record _request_ of _optional_, do
-              1. Let _requestedModule_ be GetImportedModule(_module_, _request_).
-              1. If _request_.[[IsStarExport]] is *true*, then
-                1. Perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
-              1. Else,
-                1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[DirectImportedNames]], _request_.[[NamespaceImportedNames]]).
+              1. If _request_.[[Phase]] is ~evaluation~, then
+                1. Let _requestedModule_ be GetImportedModule(_module_, _request_).
+                1. If _request_.[[IsStarExport]] is *true*, then
+                  1. Perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
+                1. Else,
+                  1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[DirectImportedNames]], _request_.[[NamespaceImportedNames]]).
             1. Return ~unused~.
           </emu-alg>
         </emu-clause>
