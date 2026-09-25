@@ -147,7 +147,7 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. If _seen_ contains _module_, return ~unused~.
             1. Append _module_ to _seen_.
-            1. Let _optional_ be _module_.GetOptionalIndirectExportsModuleRequests(« _exportName_ »).
+            1. Let _optional_ be _module_.GetOptionalIndirectExportsModuleRequests(« _exportName_ », « »).
             1. For each OptionalModuleRequest Record _request_ of _optional_, do
               1. Let _requestedModule_ be GetImportedModule(_module_, _request_).
               1. If _request_.[[IsStarExport]] is *true*, then
@@ -327,7 +327,7 @@ contributors: Nicolò Ribaudo
                 1. <del>Let _evaluatePromise_ be _module_.Evaluate().</del>
               1. <ins>If _phase_ is ~defer~, let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</ins>
               1. <ins>Else, let _evaluationList_ be « _module_ ».</ins>
-              1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
+              1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_, « »).</ins>
               1. <ins>Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_module_, _optionalIndirectRequests_, « », « »)).</ins>
               1. <ins>If _evaluationList_ is empty, then</ins>
                 1. <ins>Assert: _phase_ is ~defer~.</ins>
@@ -906,7 +906,7 @@ contributors: Nicolò Ribaudo
                     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
                     1. If ReadyForSyncExecution(_requiredModule_, <ins>AllImportedNames(_request_),</ins> _seen_) is *false*, then
                       1. Return *false*.
-              1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _seen_), do</ins>
+              1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, « », _seen_), do</ins>
                 1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
                 1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_), _seen_) is *false*, return *false*.</ins>
               1. Return *true*.
@@ -1101,12 +1101,13 @@ contributors: Nicolò Ribaudo
               <td>
                 <ins>
                   GetOptionalIndirectExportsModuleRequests (
-                    _importedNames_: ~all~ or a List of Strings,
+                    _directImportedNames_: ~all~ or a List of Strings,
+                    _namespaceImportedNames_: ~all~ or a List of Strings,
                   ): a List of OptionalModuleRequest Records
                 </ins>
               </td>
               <td>
-                <p><ins>It computes the Module Requests for the additional dependencies (not already listed in this module's [[RequestedModules]]) needed to be able to import _importedNames_ from this module. In case of a Source Text Module Record, these would be the dependencies specified through `export defer`.</ins></p>
+                <p><ins>It computes the Module Requests for the additional dependencies (not already listed in this module's [[RequestedModules]]) needed to be able to import _directImportedNames_ and _namespaceImportedNames_ from this module. The two are kept apart so that a re-export which merely passes names through, such as `export * from "mod"`, can preserve whether each name was imported directly or reached through a namespace object. In case of a Source Text Module Record, these would be the dependencies specified through `export defer`.</ins></p>
 
                 <p><ins>This abstract method has the following default implementation:</ins></p>
                 <emu-alg>
@@ -1251,7 +1252,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
                   1. <del>Append _module_ to _state_.[[Visited]].</del>
                   1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: « » } to _state_.[[Visited]].</ins>
-                1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, _state_.[[Visited]]).</ins>
+                1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, _importedNames_, « », _state_.[[Visited]]).</ins>
                 1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _optionalIndirectRequests_.</ins>
                 1. Let _requestedModulesCount_ be the number of elements in <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>.
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
@@ -1329,7 +1330,7 @@ contributors: Nicolò Ribaudo
               1. Return ? _result_.
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Assert: _stack_ is empty.
-            1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
+            1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_, « »).</ins>
             1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
               1. <ins>Assert: _requiredModule_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
@@ -1410,7 +1411,7 @@ contributors: Nicolò Ribaudo
                     1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, AllImportedNames(_request_), _previouslyImportedNames_).
+                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
                   1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
@@ -1468,7 +1469,7 @@ contributors: Nicolò Ribaudo
               1. <del>Return _promiseCapability_.[[Promise]].</del>
               1. <ins>Let _topLevelPromise_ be _promiseCapability_.[[Promise]].</ins>
             1. <ins>If _topLevelPromise_.[[PromiseState]] is ~rejected~, return _topLevelPromise_.</ins>
-            1. <ins>Let _optionalIndirectRequests_ be _originalModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
+            1. <ins>Let _optionalIndirectRequests_ be _originalModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_, « »).</ins>
             1. <ins>Let _promises_ be « _topLevelPromise_ ».</ins>
             1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
               1. <ins>Let _requiredModule_ be GetImportedModule(_originalModule_, _request_).</ins>
@@ -1588,12 +1589,17 @@ contributors: Nicolò Ribaudo
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
                     1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
-                  1. [id="step-BuildEvaluationList-direct-importedNames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _previouslyImportedNames_).
-                  1. [id="step-BuildEvaluationList-namespace-importedNames"] If _request_.[[NamespaceImportedNames]] is ~all~ or _request_.[[NamespaceImportedNames]] is not empty, then
-                    1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
-                    1. Let _seen_ be a new empty List.
-                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
-                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
+                  1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
+                  1. NOTE: The name set is consumed once, so the requests below are in the order in which the corresponding `export defer` declarations appear in _requiredModule_. Each request is then handled according to how its names were imported, rather than the two kinds being collected in two separate passes.
+                  1. For each OptionalModuleRequest Record _optionalRequest_ of _optionalIndirectRequests_, do
+                    1. NOTE: A request can carry names of both kinds, when more than one `export defer` declaration resolves to the same module. Each kind is handled with only its own names, so that neither consumes the other's on the module being requested.
+                    1. [id="step-BuildEvaluationList-namespace-importedNames"] If _optionalRequest_.[[NamespaceImportedNames]] is ~all~ or _optionalRequest_.[[NamespaceImportedNames]] is not an empty List, then
+                      1. Let _namespaceRequest_ be a copy of _optionalRequest_ whose [[DirectImportedNames]] field is « ».
+                      1. Let _seen_ be a new empty List.
+                      1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, « _namespaceRequest_ », _seen_, _previouslyImportedNames_)).
+                    1. [id="step-BuildEvaluationList-direct-importedNames"] If _optionalRequest_.[[DirectImportedNames]] is ~all~ or _optionalRequest_.[[DirectImportedNames]] is not an empty List, then
+                      1. Let _directRequest_ be a copy of _optionalRequest_ whose [[NamespaceImportedNames]] field is « ».
+                      1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, « _directRequest_ », _previouslyImportedNames_).
               1. Return ~unused~.
             </emu-alg>
 
@@ -1680,7 +1686,7 @@ contributors: Nicolò Ribaudo
                   1. If _requiredModule_ is a Cyclic Module Record, then
                     1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
                       1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: « » } to _previouslyImportedNames_.
-                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, AllImportedNames(_request_), _previouslyImportedNames_).
+                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[DirectImportedNames]], _request_.[[NamespaceImportedNames]], _previouslyImportedNames_).
                     1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
                 1. Return _result_.
               </emu-alg>
@@ -1693,22 +1699,24 @@ contributors: Nicolò Ribaudo
             <ins>
               GetNewOptionalIndirectExportsModuleRequests (
                 _module_: a Cyclic Module Record,
-                _importedNames_: ~all~, or a List of Strings,
+                _directImportedNames_: ~all~, or a List of Strings,
+                _namespaceImportedNames_: ~all~, or a List of Strings,
                 _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
               ): a List of ModuleRequest Records
             </ins>
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd>It returns the Module Requests for the `export defer` dependencies of _module_ needed for the names in _importedNames_ that have not already been requested from _module_, and records those names in _previouslyImportedNames_.</dd>
+            <dd>It returns the Module Requests for the `export defer` dependencies of _module_ needed for the names in _directImportedNames_ and _namespaceImportedNames_ that have not already been requested from _module_, and records those names in _previouslyImportedNames_.</dd>
           </dl>
 
           <emu-alg>
             1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _module_.
             1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
-            1. Let _newImportedNames_ be ExcludeImportedNames(_importedNames_, _previous_.[[ImportedNames]]).
-            1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_previous_.[[ImportedNames]], _newImportedNames_).
-            1. Return _module_.GetOptionalIndirectExportsModuleRequests(_newImportedNames_).
+            1. Let _newDirectImportedNames_ be ExcludeImportedNames(_directImportedNames_, _previous_.[[ImportedNames]]).
+            1. Let _newNamespaceImportedNames_ be ExcludeImportedNames(_namespaceImportedNames_, _previous_.[[ImportedNames]]).
+            1. Set _previous_.[[ImportedNames]] to MergeImportedNames(_previous_.[[ImportedNames]], MergeImportedNames(_newDirectImportedNames_, _newNamespaceImportedNames_)).
+            1. Return _module_.GetOptionalIndirectExportsModuleRequests(_newDirectImportedNames_, _newNamespaceImportedNames_).
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -2702,7 +2710,8 @@ contributors: Nicolò Ribaudo
             <h1>
               <ins>
                 GetOptionalIndirectExportsModuleRequests (
-                  _importedNames_: ~all~ or a List of Strings,
+                  _directImportedNames_: ~all~ or a List of Strings,
+                  _namespaceImportedNames_: ~all~ or a List of Strings,
                 ): a List of OptionalModuleRequest Records
               </ins>
             </h1>
@@ -2712,14 +2721,16 @@ contributors: Nicolò Ribaudo
             </dl>
 
             <emu-alg>
+              1. Let _importedNames_ be MergeImportedNames(_directImportedNames_, _namespaceImportedNames_).
               1. Let _requests_ be a new empty List.
               1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
                 1. Let _processEntry_ be *true*.
                 1. Let _isStarExport_ be *false*.
                 1. If _oie_.[[ImportName]] is ~all-but-default~, then
-                  1. Let _newNamespaceImportedNames_ be « ».
-                  1. Let _newDirectImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
-                  1. If _newDirectImportedNames_ is an empty List, set _processEntry_ to *false*.
+                  1. NOTE: `export * from "mod"` declares no names of its own; it passes through the names it was asked for. Each name therefore keeps the kind it arrived with, rather than all of them becoming directly imported.
+                  1. Let _newDirectImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_directImportedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
+                  1. Let _newNamespaceImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_namespaceImportedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
+                  1. If _newDirectImportedNames_ is an empty List and _newNamespaceImportedNames_ is an empty List, set _processEntry_ to *false*.
                   1. Set _isStarExport_ to *true*.
                   1. NOTE: We are handling an `export * from "mod"` declaration. While it's not by itself an optional indirect export, it is treated as one because it may be re-exporting indirect exports of `"mod"`. It is marked as with [[IsStarExport]] in the resulting OptionalModuleRequest Record so that the evaluation logic can handle it appropriately.
                 1. Else if _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
@@ -2727,8 +2738,13 @@ contributors: Nicolò Ribaudo
                   1. Let _newNamespaceImportedNames_ be ~all~.
                   1. Assert: _oie_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
                   1. If _oie_.[[ImportName]] is a String, then
-                    1. Set _newDirectImportedNames_ to « _oie_.[[ImportName]] ».
-                    1. Set _newNamespaceImportedNames_ be « ».
+                    1. NOTE: A re-exported binding is eagerly evaluated only when it was itself imported directly. Reached through a namespace object, its evaluation is deferred to that object's [[Get]].
+                    1. If _directImportedNames_ is ~all~ or _directImportedNames_ contains _oie_.[[ExportName]], then
+                      1. Set _newDirectImportedNames_ to « _oie_.[[ImportName]] ».
+                      1. Set _newNamespaceImportedNames_ to « ».
+                    1. Else,
+                      1. Set _newDirectImportedNames_ to « ».
+                      1. Set _newNamespaceImportedNames_ to « _oie_.[[ImportName]] ».
                   1. If _oie_.[[ImportName]] is ~filtered-namespace~, set _newNamespaceImportedNames_ to _oie_.[[NamespaceNamesFilter]].
                 1. Else,
                   1. Set _processEntry_ to *false*.
