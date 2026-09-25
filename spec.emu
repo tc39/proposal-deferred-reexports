@@ -262,7 +262,7 @@ contributors: Nicolò Ribaudo
                 1. <ins>Perform _fulfilledClosure_().</ins>
                 1. <ins>Return ~unused~.</ins>
               1. <ins>If the length of _evaluationList_ = 1, then</ins>
-                1. <ins>Let _evaluatePromise_ be _module_.Evaluate().</ins>
+                1. <ins>Let _evaluatePromise_ be _evaluationList_[0].Evaluate().</ins>
               1. <ins>Else,</ins>
                 1. <ins>Let _evaluationPromises_ be a new empty List.</ins>
                 1. <ins>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _evaluationPromises_.</ins>
