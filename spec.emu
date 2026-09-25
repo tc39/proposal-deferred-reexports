@@ -2728,7 +2728,7 @@ contributors: Nicolò Ribaudo
                   1. Assert: _oie_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
                   1. If _oie_.[[ImportName]] is a String, then
                     1. Set _newDirectImportedNames_ to « _oie_.[[ImportName]] ».
-                    1. Set _newNamespaceImportedNames_ be « ».
+                    1. Set _newNamespaceImportedNames_ to « ».
                   1. If _oie_.[[ImportName]] is ~filtered-namespace~, set _newNamespaceImportedNames_ to _oie_.[[NamespaceNamesFilter]].
                 1. Else,
                   1. Set _processEntry_ to *false*.
