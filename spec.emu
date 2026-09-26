@@ -1547,7 +1547,8 @@ contributors: Nicolò Ribaudo
                   1. [id="step-BuildEvaluationList-namespace-importedNames"] If _request_.[[ImportedNames]].[[Namespace]] is ~all~ or _request_.[[ImportedNames]].[[Namespace]] is not empty, then
                     1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
                     1. Let _seen_ be a new empty List.
-                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
+                    1. Let _copyPreviouslyImportedNames_ be a copy of _previouslyImportedNames_.
+                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _copyPreviouslyImportedNames_)).
                   1. [id="step-BuildEvaluationList-direct-importedNames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
                   1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
               1. Return ~unused~.
