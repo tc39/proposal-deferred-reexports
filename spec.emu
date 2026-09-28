@@ -863,8 +863,9 @@ contributors: Nicolò Ribaudo
                     1. If ReadyForSyncExecution(_requiredModule_, <ins>AllImportedNames(_request_),</ins> _seen_) is *false*, then
                       1. Return *false*.
               1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _seen_), do</ins>
-                1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
-                1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_), _seen_) is *false*, return *false*.</ins>
+                1. <ins>If _request_.[[Phase]] is ~evaluation~, then</ins>
+                  1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
+                  1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_), _seen_) is *false*, return *false*.</ins>
               1. Return *true*.
             </emu-alg>
           </emu-clause>
