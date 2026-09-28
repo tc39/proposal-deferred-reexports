@@ -1520,7 +1520,7 @@ contributors: Nicolò Ribaudo
               1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate().</ins>
               1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
               1. <ins>Append _innerPromise_ to _promises_.</ins>
-            1. <ins>If _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
+            1. <ins>If the number of elements in _promises_ > 1 and _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
               1. <ins>NOTE: If all modules in the graph are synchronous, the usage of promises is an internal specification detail. In that case, we do not use SafePerformPromiseAll to keep returning an already settled promise.</ins>
               1. <ins>Return SafePerformPromiseAll(_promises_).</ins>
             1. <ins>Return _topLevelPromise_.</ins>
