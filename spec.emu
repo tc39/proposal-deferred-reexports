@@ -1513,7 +1513,7 @@ contributors: Nicolò Ribaudo
             1. <ins>Let _previouslyImportedNames_ be « the Record { [[Module]]: _originalModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
             1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_originalModule_, the ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _previouslyImportedNames_).</ins>
             1. <ins>Let _optionalEvaluationList_ be « ».</ins>
-            1. <ins>Perform BuildOptionalEvaluationList(_optionalEvaluationList_, _originalModule_, _optionalIndirectRequests_, _previouslyImportedNames_).</ins>
+            1. <ins>Perform BuildEvaluationList(_optionalEvaluationList_, _originalModule_, _optionalIndirectRequests_, _previouslyImportedNames_, ~ignore-deferred-namespace~).</ins>
             1. <ins>Let _promises_ be « _topLevelPromise_ ».</ins>
             1. <ins>For each Module Record _requiredModule_ of _optionalEvaluationList_, do</ins>
               1. <ins>Assert: If _requiredModule_ is a Cyclic Module Record, _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
@@ -1564,7 +1564,7 @@ contributors: Nicolò Ribaudo
                 1. <del>Else if _evaluationList_ does not contain _requiredModule_, then</del>
                   1. <del>Append _requiredModule_ to _evaluationList_.</del>
               1. <ins>Let _evaluationList_ be « ».</ins>
-              1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _module_.[[RequestedModules]], « »).</ins>
+              1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _module_.[[RequestedModules]], « », ~gather-async-deps~).</ins>
               1. Append _module_ to _stack_.
               1. For each Module Record _requiredModule_ of _evaluationList_, do
                 1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
@@ -1617,28 +1617,33 @@ contributors: Nicolò Ribaudo
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
                   _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
+                  _onDeferredNamespace_: ~ignore-deferred-namespace~ or ~gather-async-deps~,
                 ): ~unused~
               </ins>
             </h1>
-            <dl class="header"></dl>
+            <dl class="header">
+              <dt>description</dt>
+              <dd>It collects in _evaluationList_, in depth-first pre-order, the modules that need to be evaluated for _moduleRequests_ and for the `export defer` and `export * from` declarations reachable through them. If _onDeferredNamespace_ is ~gather-async-deps~, it also collects the asynchronous transitive dependencies of modules that are imported with the ~defer~ phase or through a namespace object, so that they are already evaluated when those modules are later evaluated synchronously. If _onDeferredNamespace_ is ~ignore-deferred-namespace~, requests with the ~defer~ phase are ignored.</dd>
+            </dl>
 
             <emu-alg>
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
-                1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
-                1. If _request_.[[Phase]] is ~defer~, then
-                  1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_, « », _previouslyImportedNames_)).
-                1. Else if _evaluationList_ does not contain _requiredModule_, then
-                  1. Append _requiredModule_ to _evaluationList_.
-                1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
-                    1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
-                  1. [id="step-BuildEvaluationList-namespace-importedNames"] If _request_.[[ImportedNames]].[[Namespace]] is ~all~ or _request_.[[ImportedNames]].[[Namespace]] is not empty, then
-                    1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
-                    1. Let _seen_ be a new empty List.
-                    1. Let _copyPreviouslyImportedNames_ be CopyPreviouslyImportedNames(_previouslyImportedNames_).
-                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _copyPreviouslyImportedNames_)).
-                  1. [id="step-BuildEvaluationList-direct-importedNames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
-                  1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
+                1. If _request_.[[Phase]] is ~evaluation~ or _onDeferredNamespace_ is ~gather-async-deps~, then
+                  1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
+                  1. If _request_.[[Phase]] is ~defer~, then
+                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_, « », _previouslyImportedNames_)).
+                  1. Else if _evaluationList_ does not contain _requiredModule_, then
+                    1. Append _requiredModule_ to _evaluationList_.
+                  1. If _requiredModule_ is a Cyclic Module Record, then
+                    1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
+                      1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                    1. [id="step-BuildEvaluationList-namespace-importedNames"] If _onDeferredNamespace_ is ~gather-async-deps~ and _request_.[[ImportedNames]].[[Namespace]] is either ~all~ or not empty, then
+                      1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
+                      1. Let _seen_ be a new empty List.
+                      1. Let _copyPreviouslyImportedNames_ be CopyPreviouslyImportedNames(_previouslyImportedNames_).
+                      1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _copyPreviouslyImportedNames_)).
+                    1. [id="step-BuildEvaluationList-direct-importedNames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
+                    1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_, _onDeferredNamespace_).
               1. Return ~unused~.
             </emu-alg>
 
@@ -1647,7 +1652,7 @@ contributors: Nicolò Ribaudo
             </emu-note>
 
             <emu-note>
-              <p>Like BuildLinkingList, this operation tracks which names have already been requested from each module in _previouslyImportedNames_, so that a module graph whose `export defer` declarations form a cycle terminates. Such graphs are not rejected when linking: `export defer * as self from "./self.js"`, for example, links successfully.</p>
+              <p>Like BuildLinkingList, this operation tracks which names have already been requested from each module in _previouslyImportedNames_, so that a module graph whose `export defer` and `export * from` declarations form a cycle terminates. Such graphs are not rejected when linking: `export defer * as self from "./self.js"`, for example, links successfully.</p>
             </emu-note>
 
             <emu-clause id="sec-ListAppendUnique" type="abstract operation">
@@ -1666,38 +1671,6 @@ contributors: Nicolò Ribaudo
                 1. Return ~unused~.
               </emu-alg>
             </emu-clause>
-          </emu-clause>
-
-          <emu-clause id="sec-BuildOptionalEvaluationList" type="abstract operation">
-            <h1>
-              <ins>
-                BuildOptionalEvaluationList (
-                  _evaluationList_: a List of Module Records,
-                  _referrer_: a Cyclic Module Record,
-                  _moduleRequests_: a List of ModuleRequest Records,
-                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
-                ): ~unused~
-              </ins>
-            </h1>
-            <dl class="header">
-              <dt>description</dt>
-              <dd>It collects in _evaluationList_, in depth-first pre-order, the modules that need to be evaluated for the `export defer` and `export * from` declarations reachable through _moduleRequests_.</dd>
-            </dl>
-            <emu-alg>
-              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
-                1. If _request_.[[Phase]] is ~evaluation~, then
-                  1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
-                  1. If _evaluationList_ does not contain _requiredModule_, append _requiredModule_ to _evaluationList_.
-                  1. If _requiredModule_ is a Cyclic Module Record, then
-                    1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
-                      1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
-                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
-                    1. Perform BuildOptionalEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
-              1. Return ~unused~.
-            </emu-alg>
-            <emu-note>
-              <p>Like BuildEvaluationList, this operation tracks in _previouslyImportedNames_ which names have already been requested from each module, so that it terminates when `export * from` and `export defer` declarations form a cycle. Requests whose [[Phase]] is ~defer~, created by `export defer * as ns from` and `export defer { ... } as ns from` declarations, are not followed: the modules providing the members of those namespace objects are evaluated when the members are accessed.</p>
-            </emu-note>
           </emu-clause>
 
           <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
