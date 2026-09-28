@@ -545,7 +545,7 @@ contributors: Nicolò Ribaudo
           1. <ins>Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, ~evaluation~, |WithClause|).</ins>
         </emu-alg>
         <emu-grammar>
-          <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</ins>
+          <ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins>
         </emu-grammar>
         <emu-alg>
           1. <ins>Return a new empty List.</ins>
@@ -571,7 +571,7 @@ contributors: Nicolò Ribaudo
           <h1>
             <ins>
               ExportFromDeclarationModuleRequest (
-                _exportFromClause_: an |ExportFromClause| Parse Node,
+                _exportFromClause_: an |ExportFromClause| or |ExplicitExportFromClause| Parse Node,
                 _fromClause_: a |FromClause| Parse Node,
                 _phase_: ~defer~ or ~evaluation~,
                 optional _withClause_: a |WithClause| Parse Node,
@@ -3126,13 +3126,13 @@ contributors: Nicolò Ribaudo
           1. NOTE: `export * from "mod"` does not directly cause loading of any of `"mod"`'s `export defer` declarations.
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
+        <emu-grammar><ins>ExplicitExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
         <emu-alg>
           1. <ins>NOTE: The names are reached through the re-exported namespace object, so they are not directly imported.</ins>
           1. <ins>Return a new empty List.</ins>
         </emu-alg>
         <emu-grammar>
-            ExportFromClause : `*` `as` ModuleExportName
+            ExplicitExportFromClause : `*` `as` ModuleExportName
             NamedExports : `{` `}`
         </emu-grammar>
         <emu-alg>
@@ -3267,18 +3267,18 @@ contributors: Nicolò Ribaudo
           1. Return a new empty List.
         </emu-alg>
         <emu-grammar>
-            ExportFromClause : NamedExports
+            ExplicitExportFromClause : NamedExports
             NamedExports : `{` `}`
             AliasedExportSpecifier : ModuleExportName `as` ModuleExportName
         </emu-grammar>
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
+        <emu-grammar>ExplicitExportFromClause : `*` `as` ModuleExportName</emu-grammar>
         <emu-alg>
           1. Return ~all~.
         </emu-alg>
-        <emu-grammar>ExportFromClause : NamedExports `as` ModuleExportName</emu-grammar>
+        <emu-grammar>ExplicitExportFromClause : NamedExports `as` ModuleExportName</emu-grammar>
         <emu-alg>
           1. Return the FilteredNamespaceImportedNames of |NamedExports|.
         </emu-alg>
@@ -3381,7 +3381,8 @@ contributors: Nicolò Ribaudo
       <h2>Syntax</h2>
       <emu-grammar type="definition">
         ExportDeclaration :
-          `export` <ins>`defer`?</ins> ExportFromClause FromClause WithClause? `;`
+          `export` ExportFromClause FromClause WithClause? `;`
+          <ins>`export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins>
           `export` NamedExports `;`
           `export` VariableStatement[~Yield, +Await]
           `export` Declaration[~Yield, +Await]
@@ -3391,9 +3392,14 @@ contributors: Nicolò Ribaudo
 
         ExportFromClause :
           `*`
+          <del>`*` `as` ModuleExportName</del>
+          <del>NamedExports</del>
+          <ins>ExplicitExportFromClause</ins>
+
+        <ins>ExplicitExportFromClause :
           `*` `as` ModuleExportName
           NamedExports
-          <ins>NamedExports `as` ModuleExportName</ins>
+          NamedExports `as` ModuleExportName</ins>
 
         NamedExports :
           `{` `}`
@@ -3427,13 +3433,7 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>The above rule means that each ReferencedBindings of |NamedExports| is treated as an |IdentifierReference|.</p>
         </emu-note>
-        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
-        <ul>
-          <li>
-            <ins>It is a Syntax Error if |ExportFromClause| is `*`.</ins>
-          </li>
-        </ul>
-        <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
+        <emu-grammar><ins>ExplicitExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
         <ul>
           <li>
             <ins>It is a Syntax Error if the |NamedExports| Contains |AliasedExportSpecifier|.</ins>
@@ -3442,6 +3442,16 @@ contributors: Nicolò Ribaudo
             <ins>It is a Syntax Error if the FilteredNamespaceNames of |NamedExports| contains any duplicate entries.</ins>
           </li>
         </ul>
+      </emu-clause>
+
+      <emu-clause id="sec-static-semantics-exportedbindings" type="sdo" number="2">
+        <h1>Static Semantics: ExportedBindings ( ): a List of Strings</h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>Return a new empty List.</ins>
+        </emu-alg>
       </emu-clause>
 
       <emu-clause id="sec-static-semantics-exportednames" type="sdo" number="3">
@@ -3469,23 +3479,31 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` <ins>`defer`?</ins> ExportFromClause FromClause WithClause? `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
           1. Return the ExportedNames of |ExportFromClause|.
+        </emu-alg>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>Return the ExportedNames of |ExplicitExportFromClause|.</ins>
         </emu-alg>
         <emu-grammar>ExportFromClause : `*`</emu-grammar>
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
         <emu-grammar>
-          ExportFromClause :
+          <del>ExportFromClause : `*` `as` ModuleExportName</del>
+          <ins>ExplicitExportFromClause :
             `*` `as` ModuleExportName
-            <ins>NamedExports `as` ModuleExportName</ins>
+            NamedExports `as` ModuleExportName</ins>
         </emu-grammar>
         <emu-alg>
           1. Return a List whose sole element is the StringValue of |ModuleExportName|.
         </emu-alg>
-        <emu-grammar>ExportFromClause : NamedExports</emu-grammar>
+        <emu-grammar>
+          <del>ExportFromClause : NamedExports</del>
+          <ins>ExplicitExportFromClause : NamedExports</ins>
+        </emu-grammar>
         <emu-alg>
           1. Return the ExportedNames of |NamedExports|.
         </emu-alg>
@@ -3556,7 +3574,7 @@ contributors: Nicolò Ribaudo
           1. Let _module_ be the sole element of the ModuleRequests of <del>|FromClause|</del><ins>|ExportDeclaration|</ins>.
           1. Return the ExportEntriesForModule of |ExportFromClause| with argument _module_.
         </emu-alg>
-        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
         <emu-alg>
           1. <ins>Return a new empty List.</ins>
         </emu-alg>
@@ -3615,13 +3633,16 @@ contributors: Nicolò Ribaudo
           1. Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~all-but-default~, [[LocalName]]: *null*, [[ExportName]]: *null*, <ins>[[NamespaceNamesFilter]]: ~empty~</ins> }.
           1. Return « _entry_ ».
         </emu-alg>
-        <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
+        <emu-grammar>
+          <del>ExportFromClause : `*` `as` ModuleExportName</del>
+          <ins>ExplicitExportFromClause : `*` `as` ModuleExportName</ins>
+        </emu-grammar>
         <emu-alg>
           1. Let _exportName_ be the StringValue of |ModuleExportName|.
           1. Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: ~namespace~, [[LocalName]]: *null*, [[ExportName]]: _exportName_, <ins>[[NamespaceNamesFilter]]: ~empty~</ins> }.
           1. Return « _entry_ ».
         </emu-alg>
-        <emu-grammar><ins>ExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
+        <emu-grammar><ins>ExplicitExportFromClause : NamedExports `as` ModuleExportName</ins></emu-grammar>
         <emu-alg>
           1. <ins>Let _exportName_ be the StringValue of |ModuleExportName|.</ins>
           1. <ins>Let _importedNames_ be the FilteredNamespaceImportedNames of |NamedExports|.</ins>
@@ -3707,14 +3728,14 @@ contributors: Nicolò Ribaudo
           1. Else, let _request_ be ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, ~evaluation~).
           1. Return ExportEntriesForModule of |ExportFromClause| with argument _request_.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` `defer` ExportFromClause FromClause WithClause? `;`</emu-grammar>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
         <emu-alg>
-          1. If |ExportFromClause| is `*` `as` |ModuleExportName| or |NamedExports| `as` |ModuleExportName|, let _phase_ be ~defer~.
+          1. If |ExplicitExportFromClause| is `*` `as` |ModuleExportName| or |NamedExports| `as` |ModuleExportName|, let _phase_ be ~defer~.
           1. Else, let _phase_ be ~evaluation~.
           1. NOTE: A deferred re-export of a namespace object creates a deferred namespace, in the same way as `import defer`. A deferred re-export of individual bindings only defers loading and evaluating the dependency until the bindings are imported.
-          1. If |WithClause| is present, let _request_ be ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, _phase_, |WithClause|).
-          1. Else, let _request_ be ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, _phase_).
-          1. Return ExportEntriesForModule of |ExportFromClause| with argument _request_.
+          1. If |WithClause| is present, let _request_ be ExportFromDeclarationModuleRequest(|ExplicitExportFromClause|, |FromClause|, _phase_, |WithClause|).
+          1. Else, let _request_ be ExportFromDeclarationModuleRequest(|ExplicitExportFromClause|, |FromClause|, _phase_).
+          1. Return ExportEntriesForModule of |ExplicitExportFromClause| with argument _request_.
         </emu-alg>
       </emu-clause>
     </emu-clause>
