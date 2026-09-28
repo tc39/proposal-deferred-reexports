@@ -1510,15 +1510,16 @@ contributors: Nicolò Ribaudo
               1. <del>Return _promiseCapability_.[[Promise]].</del>
               1. <ins>Let _topLevelPromise_ be _promiseCapability_.[[Promise]].</ins>
             1. <ins>If _topLevelPromise_.[[PromiseState]] is ~rejected~, return _topLevelPromise_.</ins>
-            1. <ins>Let _optionalIndirectRequests_ be _originalModule_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
+            1. <ins>Let _previouslyImportedNames_ be « the Record { [[Module]]: _originalModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
+            1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_originalModule_, the ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _previouslyImportedNames_).</ins>
+            1. <ins>Let _optionalEvaluationList_ be « ».</ins>
+            1. <ins>Perform BuildOptionalEvaluationList(_optionalEvaluationList_, _originalModule_, _optionalIndirectRequests_, _previouslyImportedNames_).</ins>
             1. <ins>Let _promises_ be « _topLevelPromise_ ».</ins>
-            1. <ins>For each ModuleRequest Record _request_ of _optionalIndirectRequests_, do</ins>
-              1. <ins>If _request_.[[Phase]] is ~evaluation~, then</ins>
-                1. <ins>Let _requiredModule_ be GetImportedModule(_originalModule_, _request_).</ins>
-                1. <ins>Assert: _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
-                1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate(_request_.[[ImportedNames]].[[Direct]]).</ins>
-                1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
-                1. <ins>Append _innerPromise_ to _promises_.</ins>
+            1. <ins>For each Module Record _requiredModule_ of _optionalEvaluationList_, do</ins>
+              1. <ins>Assert: If _requiredModule_ is a Cyclic Module Record, _requiredModule_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.</ins>
+              1. <ins>Let _innerPromise_ be _requiredModule_.Evaluate().</ins>
+              1. <ins>If _innerPromise_.[[PromiseState]] is ~rejected~, return _innerPromise_.</ins>
+              1. <ins>Append _innerPromise_ to _promises_.</ins>
             1. <ins>If _promises_ contains a Promise _P_ such that _P_.[[PromiseState]] is ~pending~, then</ins>
               1. <ins>NOTE: If all modules in the graph are synchronous, the usage of promises is an internal specification detail. In that case, we do not use SafePerformPromiseAll to keep returning an already settled promise.</ins>
               1. <ins>Return SafePerformPromiseAll(_promises_).</ins>
@@ -1665,6 +1666,38 @@ contributors: Nicolò Ribaudo
                 1. Return ~unused~.
               </emu-alg>
             </emu-clause>
+          </emu-clause>
+
+          <emu-clause id="sec-BuildOptionalEvaluationList" type="abstract operation">
+            <h1>
+              <ins>
+                BuildOptionalEvaluationList (
+                  _evaluationList_: a List of Module Records,
+                  _referrer_: a Cyclic Module Record,
+                  _moduleRequests_: a List of ModuleRequest Records,
+                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
+                ): ~unused~
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd>It collects in _evaluationList_, in depth-first pre-order, the modules that need to be evaluated for the `export defer` and `export * from` declarations reachable through _moduleRequests_.</dd>
+            </dl>
+            <emu-alg>
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. If _request_.[[Phase]] is ~evaluation~, then
+                  1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
+                  1. If _evaluationList_ does not contain _requiredModule_, append _requiredModule_ to _evaluationList_.
+                  1. If _requiredModule_ is a Cyclic Module Record, then
+                    1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
+                      1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                    1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
+                    1. Perform BuildOptionalEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
+              1. Return ~unused~.
+            </emu-alg>
+            <emu-note>
+              <p>Like BuildEvaluationList, this operation tracks in _previouslyImportedNames_ which names have already been requested from each module, so that it terminates when `export * from` and `export defer` declarations form a cycle. Requests whose [[Phase]] is ~defer~, created by `export defer * as ns from` and `export defer { ... } as ns from` declarations, are not followed: the modules providing the members of those namespace objects are evaluated when the members are accessed.</p>
+            </emu-note>
           </emu-clause>
 
           <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
