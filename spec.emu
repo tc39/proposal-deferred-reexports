@@ -1612,7 +1612,8 @@ contributors: Nicolò Ribaudo
                 1. If _request_.[[Phase]] is ~evaluation~ or _onDeferredNamespace_ is ~gather-async-deps~, then
                   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
                   1. If _request_.[[Phase]] is ~defer~, then
-                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_, « », _previouslyImportedNames_)).
+                    1. NOTE: The names requested while gathering the asynchronous dependencies of a deferred module are recorded in a copy of _previouslyImportedNames_, because the modules re-exporting them are not being scheduled for evaluation: a later request with the ~evaluation~ phase for the same names must still add them to _evaluationList_.
+                    1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependencies(_requiredModule_, « », CopyPreviouslyImportedNames(_previouslyImportedNames_))).
                   1. Else if _evaluationList_ does not contain _requiredModule_, then
                     1. Append _requiredModule_ to _evaluationList_.
                   1. If _requiredModule_ is a Cyclic Module Record, then
