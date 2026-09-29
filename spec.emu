@@ -132,7 +132,7 @@ contributors: Nicolò Ribaudo
               1. If _request_.[[Phase]] is ~evaluation~, then
                 1. Let _requestedModule_ be GetImportedModule(_module_, _request_).
                 1. If _request_.[[IsStarExport]] is *true*, then
-                  1. Perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
+                  1. If _requestedModule_ is a Cyclic Module Record, perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
                 1. Else,
                   1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[ImportedNames]]).
             1. Return ~unused~.
@@ -308,8 +308,9 @@ contributors: Nicolò Ribaudo
                 1. <del>Let _evaluatePromise_ be _module_.Evaluate().</del>
               1. <ins>If _phase_ is ~defer~, let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</ins>
               1. <ins>Else, let _evaluationList_ be « _module_ ».</ins>
-              1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
-              1. <ins>Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_module_, _optionalIndirectRequests_, « », « »)).</ins>
+              1. <ins>If _module_ is a Cyclic Module Record, then</ins>
+                1. <ins>Let _optionalIndirectRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(_importedNames_).</ins>
+                1. <ins>Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_module_, _optionalIndirectRequests_, « », « »)).</ins>
               1. <ins>If _evaluationList_ is empty, then</ins>
                 1. <ins>Assert: _phase_ is ~defer~.</ins>
                 1. <ins>Perform _fulfilledClosure_().</ins>
