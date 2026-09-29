@@ -117,7 +117,7 @@ contributors: Nicolò Ribaudo
             EnsureDeferredExportEvaluated (
               _module_: a Cyclic Module Record,
               _exportName_: a String,
-              _seen_: a List of Module Records
+              _seen_: a List of Module Records,
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
           <dl class="header">
@@ -873,7 +873,7 @@ contributors: Nicolò Ribaudo
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd>It synchronously evaluates _module_, throwing before evaluating if _module__'s evaluation would not return an already settled promise.</dd>
+            <dd>It synchronously evaluates _module_, throwing before evaluating if _module_'s evaluation would not return an already settled promise.</dd>
           </dl>
 
           <emu-alg>
@@ -1137,7 +1137,7 @@ contributors: Nicolò Ribaudo
                 </ins>
               </td>
               <td>
-                <p><ins>It computes the Module Requests for the additional dependencies (not already listed in this module's [[RequestedModules]]) needed to be able to import _importedNames_ from this module. In case of a Source Text Module Record, these would be the dependencies specified through `export defer`.</ins></p>
+                <p><ins>It computes the Module Requests for the optional dependencies needed to be able to import _importedNames_ from this module, which are only loaded, linked, and evaluated when some of the names they provide are imported. In case of a Source Text Module Record, these are the dependencies specified through `export defer`, and the dependencies specified through `export * from` that may re-export `export defer` bindings of other modules.</ins></p>
 
                 <p><ins>This abstract method has the following default implementation:</ins></p>
                 <emu-alg>
@@ -1578,7 +1578,7 @@ contributors: Nicolò Ribaudo
           </emu-alg>
 
           <emu-note>
-            <ins>Unlike Link, Evaluate does not take an _importedNames__ parameter: it evaluates the module and its dependencies, but not the modules re-exported through the module's own `export defer` declarations. Those are evaluated by the caller when needed: ContinueDynamicImport evaluates in advance their asynchronous dependencies, and EvaluateModuleSync synchronously evaluates them when the corresponding binding is accessed.</ins>
+            <ins>Unlike Link, Evaluate does not take an _importedNames_ parameter: it evaluates the module and its dependencies, but not the modules re-exported through the module's own `export defer` declarations. Those are evaluated by the caller when needed: ContinueDynamicImport evaluates in advance their asynchronous dependencies, and EvaluateModuleSync synchronously evaluates them when the corresponding binding is accessed.</ins>
           </emu-note>
 
           <emu-clause id="sec-innermoduleevaluation" type="abstract operation">
@@ -1668,7 +1668,7 @@ contributors: Nicolò Ribaudo
             <h1>
               <ins>
                 BuildEvaluationList (
-                  _evaluationList_: a list of Module Records,
+                  _evaluationList_: a List of Module Records,
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
                   _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
@@ -1734,7 +1734,7 @@ contributors: Nicolò Ribaudo
               GatherAsynchronousTransitiveDependencies (
                 _module_: a Module Record,
                 optional _seen_: a List of Module Records,
-                <ins>optional _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record)</ins>
+                <ins>optional _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),</ins>
               ): a List of Module Records
             </h1>
             <dl class="header">
@@ -1769,7 +1769,7 @@ contributors: Nicolò Ribaudo
                     _referrer_: a Cyclic Module Record,
                     _moduleRequests_: a List of ModuleRequest Records,
                     _seen_: a List of Module Records,
-                    _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record)
+                    _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
                   ): a List of Module Records
                 </ins>
               </h1>
@@ -1801,7 +1801,7 @@ contributors: Nicolò Ribaudo
                 _module_: a Cyclic Module Record,
                 _importedNames_: an ImportedNames Record,
                 _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
-              ): a List of ModuleRequest Records
+              ): a List of OptionalModuleRequest Records
             </ins>
           </h1>
           <dl class="header">
@@ -1951,7 +1951,7 @@ contributors: Nicolò Ribaudo
                 <ins>a List of ExportEntry Records whose [[LocalName]] is *null*.</ins>
               </td>
               <td>
-                <ins>A list of all the bindings re-exported through `export defer { ... } from "..."`. The List is in source text occurrence order.</ins>
+                <ins>A list of the entries for the `export defer ... from "..."` declarations, and for the `export * from "..."` declarations through which the `export defer` bindings of other modules may be re-exported. The List is in source text occurrence order.</ins>
               </td>
             </tr>
             <tr>
@@ -2556,7 +2556,7 @@ contributors: Nicolò Ribaudo
               <h1>
                 <ins>
                   GetOwnExportedNames (
-                    _module_: a Source Text Module Record
+                    _module_: a Source Text Module Record,
                   ): a List of Strings
                 </ins>
               </h1>
@@ -2878,7 +2878,7 @@ contributors: Nicolò Ribaudo
           GetModuleNamespace (
             _module_: an instance of a concrete subclass of Module Record,
             _phase_: ~defer~ or ~evaluation~,
-            <ins>_importedNames_: ~all~ or a List of Strings</ins>
+            <ins>_importedNames_: ~all~ or a List of Strings,</ins>
           ): a Module Namespace Object
         </h1>
         <dl class="header">
@@ -2995,14 +2995,14 @@ contributors: Nicolò Ribaudo
         </emu-grammar>
         <ul>
           <li>
-            <ins>It is a Syntax Error if LocalBindings of |NamedImports| contains any |StringLiteral|s.</ins>
+            <ins>It is a Syntax Error if UnaliasedImportNames of |NamedImports| contains any |StringLiteral|s.</ins>
           </li>
           <li>
-            <ins>For each |IdentifierName| _n_ in LocalBindings of |NamedImports|: It is a Syntax Error if StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"arguments"*, *"await"*, *"eval"*, *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, *"static"*, or *"yield"*.</ins>
+            <ins>For each |IdentifierName| _n_ in UnaliasedImportNames of |NamedImports|: It is a Syntax Error if StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"arguments"*, *"await"*, *"eval"*, *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, *"static"*, or *"yield"*.</ins>
           </li>
         </ul>
         <emu-note>
-          <p><ins>The above rules mean that each LocalBindings of |NamedImports| is treated as an |ImportedBinding|.</ins></p>
+          <p><ins>The above rules mean that each element of the UnaliasedImportNames of |NamedImports| is treated as an |ImportedBinding|.</ins></p>
         </emu-note>
 
         <emu-grammar><ins>NameSpaceImport : NamedImports `as` ImportedBinding</ins></emu-grammar>
@@ -3134,7 +3134,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-DirectImportedNames" type="sdo">
         <h1>
           <ins>
-            Static Semantics: DirectImportedNames ( ): List of unique Strings or empty
+            Static Semantics: DirectImportedNames ( ): a List of unique Strings
           </ins>
         </h1>
         <dl class="header">
@@ -3355,11 +3355,16 @@ contributors: Nicolò Ribaudo
           1. Let _importedName_ be the StringValue of |ModuleExportName|.
           1. Return « _importedName_ ».
         </emu-alg>
+        <emu-grammar>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Let _importedName_ be the StringValue of the first |ModuleExportName|.
+          1. Return « _importedName_ ».
+        </emu-alg>
       </emu-clause>
 
-      <emu-clause id="sec-imports-LocalBindings" type="sdo">
+      <emu-clause id="sec-imports-UnaliasedImportNames" type="sdo">
         <h1>
-          <ins>Static Semantics: LocalBindings ( ): a List of either |StringLiteral| or |IdentifierName| Parse Nodes</ins>
+          <ins>Static Semantics: UnaliasedImportNames ( ): a List of either |StringLiteral| or |IdentifierName| Parse Nodes</ins>
         </h1>
         <dl class="header">
         </dl>
@@ -3369,16 +3374,15 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
         <emu-alg>
-          1. Let _bindings1_ be LocalBindings of |ImportsList|.
-          1. Let _bindings2_ be LocalBindings of |ImportSpecifier|.
-          1. Return the list-concatenation of _bindings1_ and _bindings2_.
+          1. Let _names1_ be UnaliasedImportNames of |ImportsList|.
+          1. Let _names2_ be UnaliasedImportNames of |ImportSpecifier|.
+          1. Return the list-concatenation of _names1_ and _names2_.
         </emu-alg>
         <emu-grammar>AliasedImportSpecifier : ModuleExportName `as` ImportedBinding</emu-grammar>
         <emu-alg>
-          1. Return the LocalBindings of |ImportedBinding|.
+          1. Return a new empty List.
         </emu-alg>
         <emu-grammar>ModuleExportName : IdentifierName</emu-grammar>
-        <emu-grammar>Identifier : IdentifierName</emu-grammar>
         <emu-alg>
           1. Return a List whose sole element is |IdentifierName|.
         </emu-alg>
