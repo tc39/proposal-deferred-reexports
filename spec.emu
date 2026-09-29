@@ -134,7 +134,7 @@ contributors: Nicolò Ribaudo
                 1. If _request_.[[IsStarExport]] is *true*, then
                   1. Perform ? EnsureDeferredExportEvaluated(_requestedModule_, _exportName_, _seen_).
                 1. Else,
-                  1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[ImportedNames]].[[Direct]], _request_.[[ImportedNames]].[[Namespace]]).
+                  1. Perform ? EvaluateModuleSync(_requestedModule_, _request_.[[ImportedNames]]).
             1. Return ~unused~.
           </emu-alg>
         </emu-clause>
@@ -868,8 +868,7 @@ contributors: Nicolò Ribaudo
           <h1>
             EvaluateModuleSync (
               _module_: a Module Record,
-              <ins>optional _directImportedNames_: a List of Strings,</ins>
-              <ins>optional _namespaceImportedNames_: ~all~ or a List of Strings,</ins>
+              <ins>optional _importedNames_: an ImportedNames Record,</ins>
             ): either a normal completion containing ~unused~ or a throw completion
           </h1>
           <dl class="header">
@@ -878,14 +877,13 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. <ins>If _directImportedNames_ is not present, set _directImportedNames_ to « ».</ins>
-            1. <ins>If _namespaceImportedNames_ is not present, set _namespaceImportedNames_ to « ».</ins>
-            1. <ins>Let _allImportedNames_ be MergeImportedNames(_directImportedNames_, _namespaceImportedNames_).</ins>
+            1. <ins>If _importedNames_ is not present, set _importedNames_ to the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }.</ins>
+            1. <ins>Let _allImportedNames_ be MergeImportedNames(_importedNames_.[[Direct]], _importedNames_.[[Namespace]]).</ins>
             1. If ReadyForSyncExecution(_module_, <ins>_allImportedNames_, ~ignore-deferred-namespace~</ins>) is *false*, throw a *TypeError* exception.
             1. <ins>Let _evaluationList_ be « _module_ ».</ins>
             1. <ins>If _module_ is a Cyclic Module Record, then</ins>
               1. <ins>Let _previouslyImportedNames_ be « the Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
-              1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: « » }, _previouslyImportedNames_).</ins>
+              1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_.[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).</ins>
               1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _optionalIndirectRequests_, _previouslyImportedNames_, ~ignore-deferred-namespace~).</ins>
             1. <ins>For each Module Record _moduleToEvaluate_ of _evaluationList_, do</ins>
               1. Let _promise_ be <del>_module_</del><ins>_moduleToEvaluate_</ins>.Evaluate().
