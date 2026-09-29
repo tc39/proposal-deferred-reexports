@@ -878,7 +878,7 @@ contributors: Nicolò Ribaudo
             </emu-alg>
 
             <emu-note>
-              <p><ins>When _onDeferredNamespace_ is ~gather-async-deps~, this operation gathers the asynchronous dependencies of a request with the ~defer~ phase the same way as BuildEvaluationList, including those reachable through the `export defer` declarations of the requested module. The names are recorded in a copy of _seen_, so that later ~evaluation~ requests still check them. Modules reached through [[RequestedModules]] are checked with a separate _seen_ List, because their names must be checked in the ~gather-async-deps~ mode even if they were already checked in the ~ignore-deferred-namespace~ mode.</ins></p>
+              <p><ins>When _onDeferredNamespace_ is ~gather-async-deps~, this operation gathers the asynchronous dependencies of a request with the ~defer~ phase the same way as BuildEvaluationList, including those reachable through the `export defer` declarations of the requested module. Async dependencies imported by deep `import defer` declarations are always gathered, as their pre-execution is not affected by which _importedNames_ are requested.</ins></p>
             </emu-note>
           </emu-clause>
         </emu-clause>
