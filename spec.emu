@@ -13,6 +13,59 @@ contributors: Nicolò Ribaudo
   <p style="margin-left:1em">NOTE: The diff markers are on top of <a href="https://tc39.es/proposal-defer-import-eval/">https://tc39.es/proposal-defer-import-eval/</a>.</p>
 </emu-note>
 
+<emu-clause id="sec-syntax-directed-operations" number="8">
+  <h1>Syntax-Directed Operations</h1>
+
+  <emu-clause id="sec-syntax-directed-operations-scope-analysis" number="2">
+    <h1>Scope Analysis</h1>
+
+    <emu-clause id="sec-static-semantics-boundnames" type="sdo" number="1">
+      <h1>Static Semantics: BoundNames ( ): a List of Strings</h1>
+      <dl class="header">
+      </dl>
+      <emu-grammar>
+        <del>ImportSpecifier : ModuleExportName `as` ImportedBinding</del>
+        <ins>AliasedImportSpecifier : ModuleExportName `as` ImportedBinding</ins>
+      </emu-grammar>
+      <emu-alg>
+        1. Return the BoundNames of |ImportedBinding|.
+      </emu-alg>
+      <emu-grammar><ins>ImportSpecifier : ModuleExportName</ins></emu-grammar>
+      <emu-alg>
+        1. <ins>Return a List whose sole element is the StringValue of |ModuleExportName|.</ins>
+      </emu-alg>
+      <emu-grammar><ins>NameSpaceImport : NamedImports `as` ImportedBinding</ins></emu-grammar>
+      <emu-alg>
+        1. <ins>Return the BoundNames of |ImportedBinding|.</ins>
+      </emu-alg>
+      <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+      <emu-alg>
+        1. <ins>Return a new empty List.</ins>
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-static-semantics-isconstantdeclaration" type="sdo" number="3">
+      <h1>Static Semantics: IsConstantDeclaration ( ): a Boolean</h1>
+      <dl class="header">
+      </dl>
+      <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+      <emu-alg>
+        1. <ins>Return *false*.</ins>
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-static-semantics-lexicallyscopeddeclarations" type="sdo" number="7">
+      <h1>Static Semantics: LexicallyScopedDeclarations ( ): a List of Parse Nodes</h1>
+      <dl class="header">
+      </dl>
+      <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+      <emu-alg>
+        1. <ins>Return a new empty List.</ins>
+      </emu-alg>
+    </emu-clause>
+  </emu-clause>
+</emu-clause>
+
 <emu-clause id="sec-ordinary-and-exotic-objects-behaviours" number="10">
   <h1>Ordinary and Exotic Objects Behaviours</h1>
 
@@ -507,6 +560,17 @@ contributors: Nicolò Ribaudo
           1. <ins>Let _directImportedNames_ be DirectImportedNames of |ImportClause|.</ins>
           1. <ins>Let _filteredNamespaceImportedNames_ be FilteredNamespaceImportedNames of |ImportClause|.</ins>
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
+        </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |ModuleSpecifier|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », <ins>[[Phase]]: ~evaluation~, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
+        </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause `;`</emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |ModuleSpecifier|.
+          1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, <ins>[[Phase]]: ~evaluation~, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`
@@ -3440,6 +3504,13 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. <ins>Return a new empty List.</ins>
         </emu-alg>
+        <emu-grammar>
+          <del>ExportSpecifier : ModuleExportName `as` ModuleExportName</del>
+          <ins>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</ins>
+        </emu-grammar>
+        <emu-alg>
+          1. Return a List whose sole element is the StringValue of the first |ModuleExportName|.
+        </emu-alg>
       </emu-clause>
 
       <emu-clause id="sec-static-semantics-exportednames" type="sdo" number="3">
@@ -3672,6 +3743,27 @@ contributors: Nicolò Ribaudo
             1. Let _localName_ be *null*.
             1. Let _importName_ be _sourceName_.
           1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: _module_, [[ImportName]]: _importName_, [[LocalName]]: _localName_, [[ExportName]]: _exportName_, <ins>[[NamespaceNamesFilter]]: ~empty~</ins> }.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-static-semantics-referencedbindings" type="sdo" number="6">
+        <h1>Static Semantics: ReferencedBindings ( ): a List of Parse Nodes</h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>
+          <del>ExportSpecifier : ModuleExportName `as` ModuleExportName</del>
+          <ins>AliasedExportSpecifier : ModuleExportName `as` ModuleExportName</ins>
+        </emu-grammar>
+        <emu-alg>
+          1. Return the ReferencedBindings of the first |ModuleExportName|.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-exports-runtime-semantics-evaluation" type="sdo" number="7">
+        <h1>Runtime Semantics: Evaluation</h1>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>Return ~empty~.</ins>
         </emu-alg>
       </emu-clause>
 
