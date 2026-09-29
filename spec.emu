@@ -881,7 +881,7 @@ contributors: Nicolò Ribaudo
             1. <ins>If _directImportedNames_ is not present, set _directImportedNames_ to « ».</ins>
             1. <ins>If _namespaceImportedNames_ is not present, set _namespaceImportedNames_ to « ».</ins>
             1. <ins>Let _allImportedNames_ be MergeImportedNames(_directImportedNames_, _namespaceImportedNames_).</ins>
-            1. If ReadyForSyncExecution(_module_, <ins>_allImportedNames_</ins>) is *false*, throw a *TypeError* exception.
+            1. If ReadyForSyncExecution(_module_, <ins>_allImportedNames_, ~ignore-deferred-namespace~</ins>) is *false*, throw a *TypeError* exception.
             1. <ins>Let _evaluationList_ be « _module_ ».</ins>
             1. <ins>If _module_ is a Cyclic Module Record, then</ins>
               1. <ins>Let _previouslyImportedNames_ be « the Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
@@ -902,13 +902,14 @@ contributors: Nicolò Ribaudo
               ReadyForSyncExecution (
                 _module_: a Module Record,
                 <ins>_importedNames_: ~all~ or a List of Strings,</ins>
+                <ins>_onDeferredNamespace_: ~ignore-deferred-namespace~ or ~gather-async-deps~,</ins>
                 optional _seen_: a List of <del>Module Records</del><ins>Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record)</ins>,
               ): a Boolean
             </h1>
             <dl class="header">
               <dt>description</dt>
               <!-- &zwj; to prevent ecmarkup from wrapping this in a <p> -->
-              <dd>&zwj;<ins>It tests whether a given (_module_, _importedNames_) pair can be safely evaluated through EvaluateModuleSync.</ins></dd>
+              <dd>&zwj;<ins>It tests whether a given (_module_, _importedNames_) pair can be safely evaluated through EvaluateModuleSync. _onDeferredNamespace_ has the same meaning as for BuildEvaluationList, whose list of modules to evaluate this operation checks.</ins></dd>
             </dl>
             <emu-alg>
               1. If _module_ is not a Cyclic Module Record, return *true*.
@@ -922,16 +923,27 @@ contributors: Nicolò Ribaudo
                   1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
                   1. Assert: _module_.[[Status]] is ~linked~ or ~evaluated~.
                   1. If _module_.[[HasTLA]] is *true*, return *false*.
+                  1. <ins>If _onDeferredNamespace_ is ~gather-async-deps~, let _seenForAsyncDeps_ be _seen_; otherwise, let _seenForAsyncDeps_ be a new empty List.</ins>
                   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-                    1. If ReadyForSyncExecution(_requiredModule_, <ins>AllImportedNames(_request_),</ins> _seen_) is *false*, then
+                    1. If ReadyForSyncExecution(_requiredModule_, <ins>AllImportedNames(_request_), ~gather-async-deps~,</ins> <del>_seen_</del><ins>_seenForAsyncDeps_</ins>) is *false*, then
                       1. Return *false*.
               1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _seen_), do</ins>
                 1. <ins>If _request_.[[Phase]] is ~evaluation~, then</ins>
                   1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
-                  1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_), _seen_) is *false*, return *false*.</ins>
+                  1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_), _onDeferredNamespace_, _seen_) is *false*, return *false*.</ins>
+                1. <ins>Else if _onDeferredNamespace_ is ~gather-async-deps~, then</ins>
+                  1. <ins>Assert: _request_.[[Phase]] is ~defer~.</ins>
+                  1. <ins>If GatherAsynchronousTransitiveDependenciesForRequests(_module_, « _request_ », « », CopyPreviouslyImportedNames(_seen_)) is not empty, return *false*.</ins>
+                1. <ins>Else,</ins>
+                  1. <ins>Assert: _request_.[[Phase]] is ~defer~.</ins>
+                  1. <ins>If GatherAsynchronousTransitiveDependencies(GetImportedModule(_module_, _request_)) is not empty, return *false*.</ins>
               1. Return *true*.
             </emu-alg>
+
+            <emu-note>
+              <p><ins>When _onDeferredNamespace_ is ~gather-async-deps~, this operation gathers the asynchronous dependencies of a request with the ~defer~ phase the same way as BuildEvaluationList, including those reachable through the `export defer` declarations of the requested module. Async dependencies imported by deep `import defer` declarations are always gathered, as their pre-execution is not affected by which _importedNames_ are requested.</ins></p>
+            </emu-note>
           </emu-clause>
         </emu-clause>
       </emu-clause>
