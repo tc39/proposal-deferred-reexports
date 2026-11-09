@@ -3466,7 +3466,7 @@ contributors: Nicolò Ribaudo
         <ins>ExplicitExportFromClause :
           `*` `as` ModuleExportName
           NamedExports
-          NamedExports `as` ModuleExportName</ins>
+          NamedExports [no LineTerminator here] `as` ModuleExportName</ins>
 
         NamedExports :
           `{` `}`
