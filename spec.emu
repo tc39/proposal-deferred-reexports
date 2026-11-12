@@ -3821,9 +3821,14 @@ contributors: Nicolò Ribaudo
 
       <emu-clause id="sec-exports-runtime-semantics-evaluation" type="sdo" number="7">
         <h1>Runtime Semantics: Evaluation</h1>
-        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
+        <emu-grammar>
+          ExportDeclaration :
+            `export` ExportFromClause FromClause WithClause? `;`
+            <ins>`export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins>
+            `export` NamedExports `;`
+        </emu-grammar>
         <emu-alg>
-          1. <ins>Return ~empty~.</ins>
+          1. Return ~empty~.
         </emu-alg>
       </emu-clause>
 
