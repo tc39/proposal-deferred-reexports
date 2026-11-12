@@ -572,17 +572,12 @@ contributors: Nicolò Ribaudo
           1. Let _requests_ be the ModuleRequests of |ModuleItemList|.
           1. Let _additionalRequests_ be the ModuleRequests of |ModuleItem|.
           1. For each ModuleRequest Record _moduleRequest_ of _additionalRequests_, do
-            1. <del>If _requests_ does not contain a ModuleRequest Record _otherModuleRequest_ such that ModuleRequestsKeyEqual(_moduleRequest_, _otherModuleRequest_) is *true* and _moduleRequest_.[[Phase]] is _otherModuleRequest_.[[Phase]], then</del>
-            1. <ins>Let _existingRequest_ be ~empty~.</ins>
-            1. <ins>For each ModuleRequest Record _otherModuleRequest_ of _requests_, do</ins>
-              1. <ins>If ModuleRequestsKeyEqual(_moduleRequest_, _otherModuleRequest_) is *true* and _moduleRequest_.[[Phase]] is _otherModuleRequest_.[[Phase]], then</ins>
-                1. <ins>Assert: _existingRequest_ is ~empty~.</ins>
-                1. <ins>Set _existingRequest_ to _otherModuleRequest_.</ins>
-            1. <ins>If _existingRequest_ is ~empty~, then</ins>
-              1. Append _moduleRequest_ to _requests_.
+            1. If _requests_ <del>does not contain</del><ins>contains</ins> a ModuleRequest Record _otherModuleRequest_ such that ModuleRequestsKeyEqual(_moduleRequest_, _otherModuleRequest_) is *true* and _moduleRequest_.[[Phase]] is _otherModuleRequest_.[[Phase]], then
+              1. <del>Append _moduleRequest_ to _requests_.</del>
+              1. <ins>Set _otherModuleRequest_.[[ImportedNames]].[[Direct]] to MergeImportedNames(_otherModuleRequest_.[[ImportedNames]].[[Direct]], _moduleRequest_.[[ImportedNames]].[[Direct]]).</ins>
+              1. <ins>Set _otherModuleRequest_.[[ImportedNames]].[[Namespace]] to MergeImportedNames(_otherModuleRequest_.[[ImportedNames]].[[Namespace]], _moduleRequest_.[[ImportedNames]].[[Namespace]]).</ins>
             1. <ins>Else,</ins>
-              1. <ins>Set _existingRequest_.[[ImportedNames]].[[Direct]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Direct]], _moduleRequest_.[[ImportedNames]].[[Direct]]).</ins>
-              1. <ins>Set _existingRequest_.[[ImportedNames]].[[Namespace]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Namespace]], _moduleRequest_.[[ImportedNames]].[[Namespace]]).</ins>
+              1. <ins>Append _moduleRequest_ to _requests_.</ins>
           1. Return _requests_.
         </emu-alg>
         <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
@@ -2887,16 +2882,12 @@ contributors: Nicolò Ribaudo
                   1. Set _processEntry_ to *false*.
                 1. If _processEntry_ is *true*, then
                   1. Let _nextRequest_ be _optionalEntry_.[[ModuleRequest]].
-                  1. Let _existingRequest_ be ~empty~.
-                  1. For each OptionalModuleRequest Record _request_ of _requests_, do
-                    1. If _existingRequest_ is ~empty~, ModuleRequestsKeyEqual(_request_, _nextRequest_) is *true*, _request_.[[Phase]] is _nextRequest_.[[Phase]], and _request_.[[IsStarExport]] is _isStarExport_, then
-                      1. Set _existingRequest_ to _request_.
-                  1. If _existingRequest_ is ~empty~, then
-                    1. Let _newRequest_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _newDirectImportedNames_, [[Namespace]]: _newNamespaceImportedNames_ }, [[IsStarExport]]: _isStarExport_ }.
-                    1. Append _newRequest_ to _requests_.
-                  1. Else,
+                  1. If _requests_ contains an OptionalModuleRequest Record _existingRequest_ such that ModuleRequestsKeyEqual(_existingRequest_, _nextRequest_) is *true*, _existingRequest_.[[Phase]] is _nextRequest_.[[Phase]], and _existingRequest_.[[IsStarExport]] is _isStarExport_, then
                     1. Set _existingRequest_.[[ImportedNames]].[[Direct]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Direct]], _newDirectImportedNames_).
                     1. Set _existingRequest_.[[ImportedNames]].[[Namespace]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Namespace]], _newNamespaceImportedNames_).
+                  1. Else,
+                    1. Let _newRequest_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _newDirectImportedNames_, [[Namespace]]: _newNamespaceImportedNames_ }, [[IsStarExport]]: _isStarExport_ }.
+                    1. Append _newRequest_ to _requests_.
               1. Return _requests_.
             </emu-alg>
           </emu-clause>
