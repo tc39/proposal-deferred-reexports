@@ -2512,6 +2512,7 @@ contributors: Nicolò Ribaudo
               </tr>
             </table>
           </emu-table>
+          <p><ins>The `export defer` forms are represented in the same way as the corresponding forms without `defer`, but their ExportEntry Records are stored in [[OptionalIndirectExportEntries]] rather than in [[IndirectExportEntries]]. For `export defer * as ns from "mod"` and `export defer {x, y} as ns from "mod"`, [[ModuleRequest]].[[Phase]] is ~defer~.</ins></p>
         </emu-note>
 
         <emu-clause id="sec-parsemodule" type="abstract operation">
