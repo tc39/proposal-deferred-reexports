@@ -128,8 +128,8 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. If _seen_ contains _module_, return ~unused~.
             1. Append _module_ to _seen_.
-            1. Let _optional_ be _module_.GetOptionalIndirectExportsModuleRequests(« _exportName_ »).
-            1. For each OptionalModuleRequest Record _request_ of _optional_, do
+            1. Let _optionalRequests_ be _module_.GetOptionalIndirectExportsModuleRequests(« _exportName_ »).
+            1. For each OptionalModuleRequest Record _request_ of _optionalRequests_, do
               1. If _request_.[[Phase]] is ~evaluation~, then
                 1. Let _requestedModule_ be GetImportedModule(_module_, _request_).
                 1. If _request_.[[IsStarExport]] is *true*, then
@@ -590,8 +590,8 @@ contributors: Nicolò Ribaudo
           1. Let _specifier_ be the SV of |FromClause|.
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _directImportedNames_ be DirectImportedNames of |NameSpaceImport|.</ins>
-          1. <ins>Let _namespaceImportedNames_ be FilteredNamespaceImportedNames of |NameSpaceImport|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _namespaceImportedNames_ }</ins> }.
+          1. <ins>Let _filteredNamespaceImportedNames_ be FilteredNamespaceImportedNames of |NameSpaceImport|.</ins>
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
         </emu-alg>
         <emu-grammar>
           ExportDeclaration : `export` ExportFromClause FromClause `;`
@@ -650,9 +650,9 @@ contributors: Nicolò Ribaudo
             1. Let _directImportedNames_ be DirectImportedNames of _exportFromClause_.
             1. Let _filteredNamespaceImportedNames_ be FilteredNamespaceImportedNames of _exportFromClause_.
             1. Let _specifier_ be the SV of _fromClause_.
-            1. If _withClause_ is present, let _attributes_ be WithClauseToAttributes of _withClause_.
-            1. Else, let _attributes_ be « ».
-            1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: _phase_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }}.
+            1. If _withClause_ is present, let _attrs_ be WithClauseToAttributes of _withClause_.
+            1. Else, let _attrs_ be « ».
+            1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }}.
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -1698,8 +1698,8 @@ contributors: Nicolò Ribaudo
                     1. [id="step-BuildEvaluationList-namespace-importedNames"] If _onDeferredNamespace_ is ~gather-async-deps~ and _request_.[[ImportedNames]].[[Namespace]] is either ~all~ or not empty, then
                       1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
                       1. Let _seen_ be a new empty List.
-                      1. Let _copyPreviouslyImportedNames_ be CopyPreviouslyImportedNames(_previouslyImportedNames_).
-                      1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _copyPreviouslyImportedNames_)).
+                      1. Let _previouslyImportedNamesCopy_ be CopyPreviouslyImportedNames(_previouslyImportedNames_).
+                      1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _previouslyImportedNamesCopy_)).
                     1. [id="step-BuildEvaluationList-direct-importedNames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
                     1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_, _onDeferredNamespace_).
               1. Return ~unused~.
@@ -2502,9 +2502,9 @@ contributors: Nicolò Ribaudo
                 1. Append _exportEntry_ to _starExportEntries_.
               1. Else,
                 1. Append _exportEntry_ to _indirectExportEntries_.
-            1. <ins>Let _optionalIndirectExportsEntries_ be OptionalIndirectExportEntries of _body_.</ins>
+            1. <ins>Let _optionalIndirectExportEntries_ be OptionalIndirectExportEntries of _body_.</ins>
             1. Let _async_ be _body_ Contains `await`.
-            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_, [[PendingOptionalFilteredNamespaceExports]]: « »,</ins> [[DFSAncestorIndex]]: ~empty~ }.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportEntries_, [[PendingOptionalFilteredNamespaceExports]]: « »,</ins> [[DFSAncestorIndex]]: ~empty~ }.
           </emu-alg>
         </emu-clause>
 
@@ -2811,34 +2811,34 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. Let _requests_ be a new empty List.
-              1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExportEntries]], do
+              1. For each ExportEntry Record _optionalEntry_ of _module_.[[OptionalIndirectExportEntries]], do
                 1. Let _processEntry_ be *true*.
                 1. Let _isStarExport_ be *false*.
-                1. If _oie_.[[ImportName]] is ~all-but-default~, then
+                1. If _optionalEntry_.[[ImportName]] is ~all-but-default~, then
                   1. Let _newNamespaceImportedNames_ be « ».
                   1. Let _newDirectImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
                   1. If _newDirectImportedNames_ is an empty List, set _processEntry_ to *false*.
                   1. Set _isStarExport_ to *true*.
                   1. NOTE: We are handling an `export * from "mod"` declaration. While it's not by itself an optional indirect export, it is treated as one because it may be re-exporting indirect exports of `"mod"`. It is marked as with [[IsStarExport]] in the resulting OptionalModuleRequest Record so that the evaluation logic can handle it appropriately.
-                1. Else if _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+                1. Else if _importedNames_ is ~all~ or _importedNames_ contains _optionalEntry_.[[ExportName]], then
                   1. Let _newDirectImportedNames_ be « ».
                   1. Let _newNamespaceImportedNames_ be ~all~.
-                  1. Assert: _oie_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
-                  1. If _oie_.[[ImportName]] is a String, then
-                    1. Set _newDirectImportedNames_ to « _oie_.[[ImportName]] ».
+                  1. Assert: _optionalEntry_.[[ImportName]] is a String, ~filtered-namespace~, or ~namespace~.
+                  1. If _optionalEntry_.[[ImportName]] is a String, then
+                    1. Set _newDirectImportedNames_ to « _optionalEntry_.[[ImportName]] ».
                     1. Set _newNamespaceImportedNames_ to « ».
-                  1. If _oie_.[[ImportName]] is ~filtered-namespace~, set _newNamespaceImportedNames_ to _oie_.[[NamespaceNamesFilter]].
+                  1. If _optionalEntry_.[[ImportName]] is ~filtered-namespace~, set _newNamespaceImportedNames_ to _optionalEntry_.[[NamespaceNamesFilter]].
                 1. Else,
                   1. Set _processEntry_ to *false*.
                 1. If _processEntry_ is *true*, then
-                  1. Let _nextRequest_ be _oie_.[[ModuleRequest]].
+                  1. Let _nextRequest_ be _optionalEntry_.[[ModuleRequest]].
                   1. Let _existingRequest_ be ~empty~.
                   1. For each OptionalModuleRequest Record _request_ of _requests_, do
                     1. If _existingRequest_ is ~empty~, ModuleRequestsKeyEqual(_request_, _nextRequest_) is *true*, _request_.[[Phase]] is _nextRequest_.[[Phase]], and _request_.[[IsStarExport]] is _isStarExport_, then
                       1. Set _existingRequest_ to _request_.
                   1. If _existingRequest_ is ~empty~, then
-                    1. Let _request_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _newDirectImportedNames_, [[Namespace]]: _newNamespaceImportedNames_ }, [[IsStarExport]]: _isStarExport_ }.
-                    1. Append _request_ to _requests_.
+                    1. Let _newRequest_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _newDirectImportedNames_, [[Namespace]]: _newNamespaceImportedNames_ }, [[IsStarExport]]: _isStarExport_ }.
+                    1. Append _newRequest_ to _requests_.
                   1. Else,
                     1. Set _existingRequest_.[[ImportedNames]].[[Direct]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Direct]], _newDirectImportedNames_).
                     1. Set _existingRequest_.[[ImportedNames]].[[Namespace]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Namespace]], _newNamespaceImportedNames_).
