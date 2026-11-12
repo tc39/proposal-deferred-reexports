@@ -553,6 +553,73 @@ contributors: Nicolò Ribaudo
             1. Return MergeImportedNames(_importedNames_.[[Direct]], _importedNames_.[[Namespace]]).
           </emu-alg>
         </emu-clause>
+
+        <emu-clause id="sec-MergeImportedNames" type="abstract operation">
+          <h1>
+            <ins>
+              MergeImportedNames (
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It returns the union of _a_ and _b_.</dd>
+          </dl>
+
+          <emu-alg>
+            1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
+            1. Assert: _a_ and _b_ are both Lists of Strings.
+            1. Let _merged_ be a copy of the List _a_.
+            1. For each String _name_ of _b_, do
+              1. If _merged_ does not contain _name_, then
+                1. Append _name_ to _merged_.
+            1. Return _merged_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-ExcludeImportedNames" type="abstract operation">
+          <h1>
+            <ins>
+              ExcludeImportedNames (
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It returns the minimal set of imported names that is guaranteed to include all the names present in _a_ but not in _b_.</dd>
+          </dl>
+
+          <emu-alg>
+            1. If _b_ is ~all~, return a new empty List.
+            1. If _a_ is ~all~, return ~all~.
+            1. Assert: _a_ and _b_ are both Lists of Strings.
+            1. Return a new List containing all the elements of _a_ that are not also elements of _b_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-ListAppendUnique" type="abstract operation">
+          <h1>
+            <ins>
+              ListAppendUnique (
+                _list1_: a List of Records,
+                _list2_: a List of Records,
+              ): ~unused~
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It appends to _list1_ each element of _list2_ that _list1_ does not already contain.</dd>
+          </dl>
+          <emu-alg>
+            1. For each Record _r_ of _list2_, do
+              1. If _list1_ does not contain _r_, append _r_ to _list1_.
+            1. Return ~unused~.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-static-semantics-modulerequests" type="sdo" number="3">
@@ -1551,6 +1618,33 @@ contributors: Nicolò Ribaudo
             </emu-note>
           </emu-clause>
 
+          <emu-clause id="sec-ensureresolvablebinding" type="abstract operation">
+            <h1>
+              <ins>
+                EnsureResolvableBinding (
+                  _module_: a Module Record,
+                  _name_: a String,
+                  _onAmbiguous_: ~allow-ambiguous~ or ~disallow-ambiguous~,
+                ): either a normal completion containing ~unused~ or a throw completion
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd>It throws an error if _module_ does not have an unambiguous export for _name_.</dd>
+            </dl>
+            <emu-alg>
+              1. Let _resolution_ be _module_.ResolveExport(_name_).
+              1. If _resolution_ is *null*, throw a *SyntaxError* exception.
+              1. If _onAmbiguous_ is ~disallow-ambiguous~, then
+                1. If _resolution_ is ~ambiguous~, throw a *SyntaxError* exception.
+                1. Assert: _resolution_ is a ResolvedBinding Record.
+              1. Return ~unused~.
+            </emu-alg>
+            <emu-note>
+              <p>ResolveExport has no observable side effects. Each time this operation is called with a specific _module_, _name_, _onAmbiguous_ set of arguments it must return the same result. An implementation might choose to cache the EnsureResolvableBinding results for the exports of a module.</p>
+            </emu-note>
+          </emu-clause>
+
           <emu-clause id="sec-ValidateRequestedOptionalIndirectExports" type="abstract operation">
             <h1>
               <ins>
@@ -1756,26 +1850,6 @@ contributors: Nicolò Ribaudo
             <emu-note>
               <p>Like BuildLinkingList, this operation tracks which names have already been requested from each module in _previouslyImportedNames_, so that a module graph whose `export defer` and `export * from` declarations form a cycle terminates. Such graphs are not rejected when linking: `export defer * as self from "./self.js"`, for example, links successfully.</p>
             </emu-note>
-
-            <emu-clause id="sec-ListAppendUnique" type="abstract operation">
-              <h1>
-                <ins>
-                  ListAppendUnique (
-                    _list1_: a List of Records,
-                    _list2_: a List of Records,
-                  ): ~unused~
-                </ins>
-              </h1>
-              <dl class="header">
-                <dt>description</dt>
-                <dd>It appends to _list1_ each element of _list2_ that _list1_ does not already contain.</dd>
-              </dl>
-              <emu-alg>
-                1. For each Record _r_ of _list2_, do
-                  1. If _list1_ does not contain _r_, append _r_ to _list1_.
-                1. Return ~unused~.
-              </emu-alg>
-            </emu-clause>
           </emu-clause>
 
           <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
@@ -2818,33 +2892,6 @@ contributors: Nicolò Ribaudo
               1. Remove _moduleContext_ from the execution context stack.
               1. Return ~unused~.
             </emu-alg>
-
-            <emu-clause id="sec-ensureresolvablebinding" type="abstract operation">
-              <h1>
-                <ins>
-                  EnsureResolvableBinding (
-                    _module_: a Module Record,
-                    _name_: a String,
-                    _onAmbiguous_: ~allow-ambiguous~ or ~disallow-ambiguous~,
-                  ): either a normal completion containing ~unused~ or a throw completion
-                </ins>
-              </h1>
-              <dl class="header">
-                <dt>description</dt>
-                <dd>It throws an error if _module_ does not have an unambiguous export for _name_.</dd>
-              </dl>
-              <emu-alg>
-                1. Let _resolution_ be _module_.ResolveExport(_name_).
-                1. If _resolution_ is *null*, throw a *SyntaxError* exception.
-                1. If _onAmbiguous_ is ~disallow-ambiguous~, then
-                  1. If _resolution_ is ~ambiguous~, throw a *SyntaxError* exception.
-                  1. Assert: _resolution_ is a ResolvedBinding Record.
-                1. Return ~unused~.
-              </emu-alg>
-              <emu-note>
-                <p>ResolveExport has no observable side effects. Each time this operation is called with a specific _module_, _name_, _onAmbiguous_ set of arguments it must return the same result. An implementation might choose to cache the EnsureResolvableBinding results for the exports of a module.</p>
-              </emu-note>
-            </emu-clause>
           </emu-clause>
 
           <emu-clause id="sec-GetOptionalIndirectExportsModuleRequests" type="concrete method" number="3">
@@ -3264,53 +3311,6 @@ contributors: Nicolò Ribaudo
           1. Let _importedName_ be the StringValue of the first |ModuleExportName|.
           1. Return « _importedName_ ».
         </emu-alg>
-
-        <emu-clause id="sec-MergeImportedNames" type="abstract operation">
-          <h1>
-            <ins>
-              MergeImportedNames (
-                _a_: ~all~ or a List of Strings,
-                _b_: ~all~ or a List of Strings,
-              ): ~all~ or a List of Strings
-            </ins>
-          </h1>
-          <dl class="header">
-            <dt>description</dt>
-            <dd>It returns the union of _a_ and _b_.</dd>
-          </dl>
-
-          <emu-alg>
-            1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
-            1. Assert: _a_ and _b_ are both Lists of Strings.
-            1. Let _merged_ be a copy of the List _a_.
-            1. For each String _name_ of _b_, do
-              1. If _merged_ does not contain _name_, then
-                1. Append _name_ to _merged_.
-            1. Return _merged_.
-          </emu-alg>
-        </emu-clause>
-
-        <emu-clause id="sec-ExcludeImportedNames" type="abstract operation">
-          <h1>
-            <ins>
-              ExcludeImportedNames (
-                _a_: ~all~ or a List of Strings,
-                _b_: ~all~ or a List of Strings,
-              ): ~all~ or a List of Strings
-            </ins>
-          </h1>
-          <dl class="header">
-            <dt>description</dt>
-            <dd>It returns the minimal set of imported names that is guaranteed to include all the names present in _a_ but not in _b_.</dd>
-          </dl>
-
-          <emu-alg>
-            1. If _b_ is ~all~, return a new empty List.
-            1. If _a_ is ~all~, return ~all~.
-            1. Assert: _a_ and _b_ are both Lists of Strings.
-            1. Return a new List containing all the elements of _a_ that are not also elements of _b_.
-          </emu-alg>
-        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-FilteredNamespaceImportedNames" type="sdo">
