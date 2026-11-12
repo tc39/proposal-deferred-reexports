@@ -1261,7 +1261,7 @@ contributors: Nicolò Ribaudo
           </emu-alg>
 
           <emu-note>
-            <ins>When the exports of the module are not observed, such as in <code>&lt;script type="module" src="./file.js"&gt;</code> tags, the host should set the _importedNames_ parameter to « ».</ins>
+            <ins>When the exports of the module are not observed, such as in <code>&lt;script type="module" src="./file.js"&gt;</code> tags, the host should set the _importedNames_ parameter to an empty List.</ins>
           </emu-note>
 
           <emu-note>
@@ -1716,7 +1716,7 @@ contributors: Nicolò Ribaudo
             </emu-alg>
 
             <emu-note>
-              <p>Step <emu-xref href="#step-buildevaluationlist-namespace-importednames"></emu-xref> is true when there's a namespace import or export. For such case, only asynchronous transitive dependencies of modules loaded through `export defer` are evaluated at this point, while synchronous dependencies should not be evaluated. They will be evaluated by the module namespace exotic object <emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver">[[Get]]</emu-xref> internal method, upon access of the corresponding binding. If there's another non-namespace import importing same names from `[[ImportedNames]].[[Namespace]]`, they'll be added to the evaluation list on step <emu-xref href="#step-buildevaluationlist-direct-importednames"></emu-xref>.</p>
+              <p>The condition in step <emu-xref href="#step-buildevaluationlist-namespace-importednames"></emu-xref> holds when there is a namespace import or export. In that case, only the asynchronous transitive dependencies of the modules loaded through `export defer` declarations are evaluated at this point, while their synchronous dependencies are not. Those are evaluated by the [[Get]] internal method of module namespace exotic objects (<emu-xref href="#sec-module-namespace-exotic-objects-get-p-receiver"></emu-xref>) when the corresponding binding is accessed. If a non-namespace import also imports some of the names in _request_.[[ImportedNames]].[[Namespace]], those are added to _evaluationList_ by step <emu-xref href="#step-buildevaluationlist-direct-importednames"></emu-xref>.</p>
             </emu-note>
 
             <emu-note>
@@ -2651,7 +2651,7 @@ contributors: Nicolò Ribaudo
                     1. <ins>If _module_.[[OptionalIndirectExportEntries]] contains _exportEntry_, then</ins>
                       1. <ins>If _module_.[[Environment]] is ~empty~, then</ins>
                         1. <ins>Assert: _module_.[[Status]] is either ~unlinked~ or ~linking~.</ins>
-                        1. <ins>NOTE: When linking across cycles, _module_'s exports might be resolved by ResolveExport before that InitializeEnvironment on _module_. In that case the _module_.[[Environment]] is not set up yet, so we mark the export as needing initialization and it will then be performed by InitializeEnvironment itself.</ins>
+                        1. <ins>NOTE: When linking across cycles, _module_'s exports might be resolved by ResolveExport before InitializeEnvironment is called on _module_. In that case _module_.[[Environment]] is not set up yet, so the export is marked as needing initialization, which will then be performed by InitializeEnvironment itself.</ins>
                         1. <ins>If _module_.[[PendingOptionalFilteredNamespaceExports]] does not contain _localName_, append _localName_ to _module_.[[PendingOptionalFilteredNamespaceExports]].</ins>
                       1. <ins>Else if ! _module_.[[Environment]].HasBinding(_localName_) is *false*, then</ins>
                         1. <ins>Perform ! _module_.[[Environment]].CreateImmutableBinding(_localName_, *true*).</ins>
@@ -2835,7 +2835,7 @@ contributors: Nicolò Ribaudo
                   1. Let _newDirectImportedNames_ be ExcludeImportedNames(ExcludeImportedNames(_importedNames_, « *"default"* »), GetOwnExportedNames(_module_)).
                   1. If _newDirectImportedNames_ is an empty List, set _processEntry_ to *false*.
                   1. Set _isStarExport_ to *true*.
-                  1. NOTE: We are handling an `export * from "mod"` declaration. While it's not by itself an optional indirect export, it is treated as one because it may be re-exporting indirect exports of `"mod"`. It is marked as with [[IsStarExport]] in the resulting OptionalModuleRequest Record so that the evaluation logic can handle it appropriately.
+                  1. NOTE: _optionalEntry_ is for an `export * from "mod"` declaration. While it is not by itself an optional indirect export, it is treated as one because it may re-export the optional indirect exports of `"mod"`. The resulting OptionalModuleRequest Record has [[IsStarExport]] set to *true* so that the evaluation logic can handle it appropriately.
                 1. Else if _importedNames_ is ~all~ or _importedNames_ contains _optionalEntry_.[[ExportName]], then
                   1. Let _newDirectImportedNames_ be a new empty List.
                   1. Let _newNamespaceImportedNames_ be ~all~.
