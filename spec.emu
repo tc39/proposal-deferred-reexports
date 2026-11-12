@@ -91,7 +91,8 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), return ! OrdinaryGet(_obj_, _propertyKey_, _receiver_).
+          1. If IsSymbolLikeNamespaceKey(_propertyKey_, _obj_), then
+            1. Return ! OrdinaryGet(_obj_, _propertyKey_, _receiver_).
           1. Let _exports_ be ? GetModuleExportsList(_obj_).
           1. If _exports_ does not contain _propertyKey_, return *undefined*.
           1. Let _module_ be _obj_.[[Module]].
@@ -189,7 +190,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-evaluate-import-call" type="abstract operation">
         <h1>
           EvaluateImportCall (
-            _arguments_: a Parse Node,
+            _args_: a Parse Node,
             _phase_: ~defer~ or ~evaluation~,
           ): either a normal completion containing a Promise or an abrupt completion
         </h1>
@@ -197,8 +198,8 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _referrer_ be GetActiveScriptOrModule().
           1. If _referrer_ is *null*, set _referrer_ to the current Realm Record.
-          1. Let _specifier_ be ? EvaluateImportCallSpecifier of _arguments_.
-          1. Let _options_ be ? EvaluateImportCallOptions of _arguments_.
+          1. Let _specifier_ be ? EvaluateImportCallSpecifier of _args_.
+          1. Let _options_ be ? EvaluateImportCallOptions of _args_.
           1. Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).
           1. Let _specifierString_ be Completion(ToString(_specifier_)).
           1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
@@ -232,7 +233,7 @@ contributors: Nicolò Ribaudo
             1. <ins>IfAbruptRejectPromise(_exports_, _promiseCapability_).</ins>
             1. <ins>If _exports_ is not *undefined*, then</ins>
               1. <ins>If _exports_ is not an Object, then</ins>
-                1. <ins>Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; a newly created *TypeError* object &raquo;).</ins>
+                1. <ins>Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).</ins>
                 1. <ins>Return _promiseCapability_.[[Promise]].</ins>
               1. <ins>Let _iteratorRecord_ be Completion(GetIterator(_exports_, ~sync~)).</ins>
               1. <ins>IfAbruptRejectPromise(_iteratorRecord_, _promiseCapability_).</ins>
@@ -272,34 +273,34 @@ contributors: Nicolò Ribaudo
           </dl>
           <emu-alg>
             1. If _moduleCompletion_ is an abrupt completion, then
-              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _moduleCompletion_.[[Value]] &raquo;).
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _moduleCompletion_.[[Value]] »).
               1. Return ~unused~.
             1. Let _module_ be _moduleCompletion_.[[Value]].
             1. Let _loadPromise_ be _module_.LoadRequestedModules(<ins>_importedNames_</ins>).
             1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _promiseCapability_ and performs the following steps when called:
-              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _reason_ &raquo;).
-              1. Return ~unused~.
-            1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, &laquo; &raquo;).
-            1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, _phase_<ins>, _importedNames_</ins> and _onRejected_ and performs the following steps when called:
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _reason_ »).
+              1. Return NormalCompletion(*undefined*).
+            1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, « »).
+            1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, _phase_, <ins>_importedNames_,</ins> and _onRejected_ and performs the following steps when called:
               1. Let _link_ be Completion(_module_.Link(<ins>_importedNames_</ins>)).
               1. If _link_ is an abrupt completion, then
-                1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _link_.[[Value]] &raquo;).
-                1. Return ~unused~.
+                1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _link_.[[Value]] »).
+                1. Return NormalCompletion(*undefined*).
               1. <ins>If _importedNames_ is a List of Strings, then</ins>
                 1. <ins>For each String _name_ of _importedNames_, do</ins>
                   1. <ins>Let _resolvable_ be Completion(EnsureResolvableBinding(_module_, _name_, ~disallow-ambiguous~)).</ins>
                   1. <ins>If _resolvable_ is an abrupt completion, then</ins>
                     1. <ins>Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *ReferenceError* object »).</ins>
-                    1. <ins>Return ~unused~.</ins>
+                    1. <ins>Return NormalCompletion(*undefined*).</ins>
               1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_, _phase_, <ins>_importedNames_,</ins> and _promiseCapability_ and performs the following steps when called:
                 1. Let _namespace_ be GetModuleNamespace(_module_, _phase_, <ins>_importedNames_</ins>).
-                1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, &laquo; _namespace_ &raquo;).
-                1. Return ~unused~.
+                1. Perform ! <emu-meta effects="user-code">Call(_promiseCapability_.[[Resolve]], *undefined*, « _namespace_ »)</emu-meta>.
+                1. Return NormalCompletion(*undefined*).
               1. <del>If _phase_ is ~defer~, then </del>
                 1. <del>Let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</del>
                 1. <del>If _evaluationList_ is empty, then</del>
-                  1. <del>Perform _fulfilledClosure_().</del>
-                  1. <del>Return ~unused~.</del>
+                  1. <del>Perform ! _fulfilledClosure_().</del>
+                  1. <del>Return NormalCompletion(*undefined*).</del>
                 1. <del>Let _asyncDepsEvaluationPromises_ be a new empty List.</del>
                 1. <del>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _asyncDepsEvaluationPromises_.</del>
                 1. <del>Let _evaluatePromise_ be SafePerformPromiseAll(_asyncDepsEvaluationPromises_).</del>
@@ -313,18 +314,18 @@ contributors: Nicolò Ribaudo
                 1. <ins>Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_module_, _optionalIndirectRequests_, « », « »)).</ins>
               1. <ins>If _evaluationList_ is empty, then</ins>
                 1. <ins>Assert: _phase_ is ~defer~.</ins>
-                1. <ins>Perform _fulfilledClosure_().</ins>
-                1. <ins>Return ~unused~.</ins>
+                1. <ins>Perform ! _fulfilledClosure_().</ins>
+                1. <ins>Return NormalCompletion(*undefined*).</ins>
               1. <ins>If the length of _evaluationList_ = 1, then</ins>
                 1. <ins>Let _evaluatePromise_ be _evaluationList_[0].Evaluate().</ins>
               1. <ins>Else,</ins>
                 1. <ins>Let _evaluationPromises_ be a new empty List.</ins>
                 1. <ins>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _evaluationPromises_.</ins>
                 1. <ins>Let _evaluatePromise_ be SafePerformPromiseAll(_evaluationPromises_).</ins>
-              1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, 0, *""*, &laquo; &raquo;).
+              1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, 0, *""*, « »).
               1. Perform PerformPromiseThen(_evaluatePromise_, _onFulfilled_, _onRejected_).
               1. Return ~unused~.
-            1. Let _linkAndEvaluate_ be CreateBuiltinFunction(_linkAndEvaluateClosure_, 0, *""*, &laquo; &raquo;).
+            1. Let _linkAndEvaluate_ be CreateBuiltinFunction(_linkAndEvaluateClosure_, 0, *""*, « »).
             1. Perform PerformPromiseThen(_loadPromise_, _linkAndEvaluate_, _onRejected_).
             1. Return ~unused~.
           </emu-alg>
@@ -521,7 +522,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ModuleItemList : ModuleItem</emu-grammar>
         <emu-alg>
-          1. Return ModuleRequests of |ModuleItem|.
+          1. Return the ModuleRequests of |ModuleItem|.
         </emu-alg>
         <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
         <emu-alg>
@@ -565,19 +566,19 @@ contributors: Nicolò Ribaudo
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
         <emu-alg>
           1. Let _specifier_ be the SV of |ModuleSpecifier|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », <ins>[[Phase]]: ~evaluation~, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause `;`</emu-grammar>
         <emu-alg>
           1. Let _specifier_ be the SV of |ModuleSpecifier|.
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, <ins>[[Phase]]: ~evaluation~, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`
         </emu-grammar>
         <emu-alg>
-          1. Let _specifier_ be SV of |FromClause|.
+          1. Let _specifier_ be the SV of |FromClause|.
           1. <ins>Let _directImportedNames_ be DirectImportedNames of |NameSpaceImport|.</ins>
           1. <ins>Let _filteredNamespaceImportedNames_ be FilteredNamespaceImportedNames of |NameSpaceImport|.</ins>
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
@@ -586,7 +587,7 @@ contributors: Nicolò Ribaudo
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`
         </emu-grammar>
         <emu-alg>
-          1. Let _specifier_ be SV of |FromClause|.
+          1. Let _specifier_ be the SV of |FromClause|.
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _directImportedNames_ be DirectImportedNames of |NameSpaceImport|.</ins>
           1. <ins>Let _namespaceImportedNames_ be FilteredNamespaceImportedNames of |NameSpaceImport|.</ins>
@@ -596,7 +597,7 @@ contributors: Nicolò Ribaudo
           ExportDeclaration : `export` ExportFromClause FromClause `;`
         </emu-grammar>
         <emu-alg>
-          1. <del>Let _specifier_ be SV of |FromClause|.</del>
+          1. <del>Let _specifier_ be the SV of |FromClause|.</del>
           1. <del>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.</del>
           1. <ins>Return a List whose sole element is ExportFromDeclarationModuleRequest(|ExportFromClause|, |FromClause|, ~evaluation~).</ins>
         </emu-alg>
@@ -659,7 +660,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-abstract-module-records" number="5">
         <h1>Abstract Module Records</h1>
         <p>A <dfn variants="Module Records">Module Record</dfn> encapsulates structural information about the imports and exports of a single module. This information is used to link the imports and exports of sets of connected modules. A Module Record includes four fields that are only used when evaluating a module.</p>
-        <p>For specification purposes Module Record values are values of the Record specification type and can be thought of as existing in a simple object-oriented hierarchy where Module Record is an abstract class with both abstract and concrete subclasses. This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record. Other specifications and implementations may define additional Module Record subclasses corresponding to alternative module definition facilities that they defined.</p>
+        <p>For specification purposes Module Records are values of the Record specification type and can be thought of as existing in a simple object-oriented hierarchy where Module Record is an abstract class with both abstract and concrete subclasses. This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record. Other specifications and implementations may define additional Module Record subclasses corresponding to alternative module definition facilities that they defined.</p>
         <p>Module Record defines the fields listed in <emu-xref href="#table-module-record-fields"></emu-xref>. All Module Definition subclasses include at least those fields. Module Record also defines the abstract method list in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref>. All Module definition subclasses must provide concrete implementations of these abstract methods.</p>
         <emu-table id="table-module-record-fields" caption="Module Record Fields" oldids="table-36">
           <table>
@@ -706,7 +707,7 @@ contributors: Nicolò Ribaudo
                 an Object or ~empty~
               </td>
               <td>
-                The Module Namespace Object (<emu-xref href="#sec-module-namespace-objects"></emu-xref>) whose [[Deferred]] slot is *false*, if one has been created for this module.
+                The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is *false*, if one has been created for this module.
               </td>
             </tr>
             <tr>
@@ -717,7 +718,7 @@ contributors: Nicolò Ribaudo
                 an Object or ~empty~
               </td>
               <td>
-                The Module Namespace Object (<emu-xref href="#sec-module-namespace-objects"></emu-xref>) whose [[Deferred]] slot is *true*, if one has been created for this module.
+                The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is *true*, if one has been created for this module.
               </td>
             </tr>
             <tr>
@@ -787,7 +788,7 @@ contributors: Nicolò Ribaudo
                 ): a ResolvedBinding Record, *null*, or ~ambiguous~
               </td>
               <td>
-                <p>It returns the binding of a name exported by this module. Bindings are represented by <ins>ResolvedBinding Records</ins> <del>a <em>ResolvedBinding Record</em>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~| ~deferred-namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~ or ~deferred-namespace~ (depending on whether the binding comes from a deferred import or not).</del> It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>It returns the binding of a name exported by this module. Bindings are represented by <ins>ResolvedBinding Records</ins> <del>a <em>ResolvedBinding Record</em>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ | ~deferred-namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~ or ~deferred-namespace~ (depending on whether the binding comes from a deferred import or not).</del> It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
@@ -919,8 +920,8 @@ contributors: Nicolò Ribaudo
               1. <ins>If _seen_ does not contain a Record whose [[Module]] field is _module_, then</ins>
                 1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _seen_.</ins>
                 1. <ins>If IsModuleSCCEvaluated(_module_) is *false*, then</ins>
-                  1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
-                  1. Assert: _module_.[[Status]] is ~linked~ or ~evaluated~.
+                  1. If _module_.[[Status]] is either ~evaluating~ or ~evaluating-async~, return *false*.
+                  1. Assert: _module_.[[Status]] is either ~linked~ or ~evaluated~.
                   1. If _module_.[[HasTLA]] is *true*, return *false*.
                   1. <ins>If _onDeferredNamespace_ is ~gather-async-deps~, let _seenForAsyncDeps_ be _seen_; otherwise, let _seenForAsyncDeps_ be a new empty List.</ins>
                   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
@@ -985,7 +986,7 @@ contributors: Nicolò Ribaudo
                 a throw completion or ~empty~
               </td>
               <td>
-                A throw completion representing the exception that occurred during evaluation. *undefined* if no exception occurred or if [[Status]] is not ~evaluated~.
+                A throw completion representing the exception that occurred during evaluation. ~empty~ if no exception occurred or if [[Status]] is not ~evaluated~.
               </td>
             </tr>
             <tr>
@@ -996,7 +997,7 @@ contributors: Nicolò Ribaudo
                 an integer or ~empty~
               </td>
               <td>
-                Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this is either the module's depth-first traversal index or that of an "earlier" module in the same strongly connected component.
+                Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this is either the module's depth-first traversal index or that of an “earlier” module in the same strongly connected component.
               </td>
             </tr>
             <tr>
@@ -1051,7 +1052,7 @@ contributors: Nicolò Ribaudo
                 ~unset~, an integer, or ~done~
               </td>
               <td>
-                This field is initially set to ~unset~, and remains ~unset~ for fully synchronous modules. For modules that are either themselves asynchronous or have an asynchronous dependency, it is set to an integer that determines the order in which execution of pending modules is queued by <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>. Once the pending module is executed, the field is set to ~done~.
+                This field is initially set to ~unset~, and remains ~unset~ for fully synchronous modules. For modules that are either themselves asynchronous or have an asynchronous dependency, it is set to an integer that determines the order in which execution of pending modules is queued by <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>. Once the pending module is successfully executed, the field is set to ~done~.
               </td>
             </tr>
             <tr>
@@ -1089,7 +1090,7 @@ contributors: Nicolò Ribaudo
             </tr>
           </table>
         </emu-table>
-        <p>In addition to the methods defined in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref> Cyclic Module Records have the additional methods listed in <emu-xref href="#table-cyclic-module-methods"></emu-xref></p>
+        <p>In addition to the methods defined in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref> Cyclic Module Records have the additional methods listed in <emu-xref href="#table-cyclic-module-methods"></emu-xref>:</p>
         <emu-table id="table-cyclic-module-methods" type="abstract methods" of="Cyclic Module Records" caption="Additional Abstract Methods of Cyclic Module Records">
           <table>
             <thead>
@@ -1601,7 +1602,7 @@ contributors: Nicolò Ribaudo
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
-                1. Otherwise, return ? _module_.[[EvaluationError]].
+                1. Return ? _module_.[[EvaluationError]].
               1. If _module_.[[Status]] is ~evaluating~, return _index_.
               1. Assert: _module_.[[Status]] is ~linked~.
               1. Set _module_.[[Status]] to ~evaluating~.
@@ -1636,7 +1637,7 @@ contributors: Nicolò Ribaudo
                   1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
                     1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
                     1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
-              1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
+              1. If _module_.[[HasTLA]] is *true* or _module_.[[PendingAsyncDependencies]] > 0, then
                 1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
                 1. Set _module_.[[AsyncEvaluationOrder]] to IncrementModuleAsyncEvaluationCount().
                 1. If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).
@@ -1652,7 +1653,7 @@ contributors: Nicolò Ribaudo
                   1. Assert: _requiredModule_ is a Cyclic Module Record.
                   1. Assert: _requiredModule_.[[AsyncEvaluationOrder]] is either an integer or ~unset~.
                   1. If _requiredModule_.[[AsyncEvaluationOrder]] is ~unset~, set _requiredModule_.[[Status]] to ~evaluated~.
-                  1. Otherwise, set _requiredModule_.[[Status]] to ~evaluating-async~.
+                  1. Else, set _requiredModule_.[[Status]] to ~evaluating-async~.
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
                   1. Set _requiredModule_.[[CycleRoot]] to _module_.
               1. Return _index_.
@@ -1740,7 +1741,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
+              <dd>It collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
             </dl>
 
             <emu-alg>
@@ -1750,7 +1751,7 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return <del>_result_</del><ins>a new empty List</ins>.
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return <del>_result_</del><ins>a new empty List</ins>.
-              1. If _module_.[[Status]] is either ~evaluating~ or IsModuleSCCEvaluated(_module_), return <del>_result_</del><ins>a new empty List</ins>.
+              1. If _module_.[[Status]] is ~evaluating~ or IsModuleSCCEvaluated(_module_) is *true*, return <del>_result_</del><ins>a new empty List</ins>.
               1. If _module_.[[HasTLA]] is *true*, then
                 1. <del>Append _module_ to _result_</del>.
                 1. Return <del>_result_</del><ins>« _module_ »</ins>.
@@ -2503,7 +2504,7 @@ contributors: Nicolò Ribaudo
                 1. Append _exportEntry_ to _indirectExportEntries_.
             1. <ins>Let _optionalIndirectExportsEntries_ be OptionalIndirectExportEntries of _body_.</ins>
             1. Let _async_ be _body_ Contains `await`.
-            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_, [[PendingOptionalFilteredNamespaceExports]]: « »,</ins> [[DFSAncestorIndex]]: ~empty~ }.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[DeferredNamespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExportEntries]]: _optionalIndirectExportsEntries_, [[PendingOptionalFilteredNamespaceExports]]: « »,</ins> [[DFSAncestorIndex]]: ~empty~ }.
           </emu-alg>
         </emu-clause>
 
@@ -2711,8 +2712,8 @@ contributors: Nicolò Ribaudo
                 1. Else,
                   1. Let _resolution_ be _importedModule_.ResolveExport(_importEntry_.[[ImportName]]).
                   1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-                  1. If _resolution_.[[BindingName]] is ~namespace~ or ~deferred-namespace~, then
-                    1. If _resolution_.[[BindingName]] is ~namespace~ let _phase_ be ~evaluation~, else let _phase_ be ~defer~.
+                  1. If _resolution_.[[BindingName]] is either ~namespace~ or ~deferred-namespace~, then
+                    1. If _resolution_.[[BindingName]] is ~namespace~, let _phase_ be ~evaluation~; else let _phase_ be ~defer~.
                     1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], _phase_, <ins>~all~</ins>).
                     1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).
                     1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).
@@ -2761,7 +2762,7 @@ contributors: Nicolò Ribaudo
                   1. Else,
                     1. Perform ! _envRecord_.CreateMutableBinding(_name_, *false*).
                   1. If _lexicalDecl_ is either a |FunctionDeclaration|, a |GeneratorDeclaration|, an |AsyncFunctionDeclaration|, or an |AsyncGeneratorDeclaration|, then
-                    1. Let _funcObj_ be InstantiateFunctionObject of _lexicalDecl_ with arguments _envRecord_ and _privateEnv_.
+                    1. Let _funcObj_ be InstantiateFunctionDeclaration of _lexicalDecl_ with arguments _envRecord_ and _privateEnv_.
                     1. Perform ! _envRecord_.InitializeBinding(_name_, _funcObj_).
               1. Remove _moduleContext_ from the execution context stack.
               1. Return ~unused~.
@@ -2892,8 +2893,7 @@ contributors: Nicolò Ribaudo
           1. <ins>NOTE: A filtered namespace object can be requested during linking, by ResolveExport or by InitializeEnvironment, for a module that has not been linked yet. A module's exported names and their resolutions are fully determined once loading has completed, so they do not depend on linking having run.</ins>
           1. <ins>Let _namespace_ be ~empty~.</ins>
           1. <ins>If _importedNames_ is ~all~, then</ins>
-            1. If _phase_ is ~defer~, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[DeferredNamespace]].
-            1. Else, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[Namespace]].
+            1. If _phase_ is ~defer~, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[DeferredNamespace]]. Else, <del>let</del> <ins>set</ins> _namespace_ <del>be</del> <ins>to</ins> _module_.[[Namespace]].
           1. If _namespace_ is ~empty~, then
             1. Let _exportedNames_ be _module_.GetExportedNames().
             1. Let _unambiguousNames_ be a new empty List.
@@ -2940,8 +2940,7 @@ contributors: Nicolò Ribaudo
 
         NamedImports :
           `{` `}`
-          `{` ImportsList `}`
-          `{` ImportsList `,` `}`
+          `{` ImportsList `,`? `}`
 
         FromClause :
           `from` ModuleSpecifier
@@ -2999,7 +2998,7 @@ contributors: Nicolò Ribaudo
             <ins>It is a Syntax Error if UnaliasedImportNames of |NamedImports| contains any |StringLiteral|s.</ins>
           </li>
           <li>
-            <ins>For each |IdentifierName| _n_ in UnaliasedImportNames of |NamedImports|: It is a Syntax Error if StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"arguments"*, *"await"*, *"eval"*, *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, *"static"*, or *"yield"*.</ins>
+            <ins>For each |IdentifierName| _n_ in the UnaliasedImportNames of |NamedImports|: It is a Syntax Error if the StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"arguments"*, *"await"*, *"eval"*, *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, *"static"*, or *"yield"*.</ins>
           </li>
         </ul>
         <emu-note>
@@ -3452,7 +3451,7 @@ contributors: Nicolò Ribaudo
           <ins>`export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins>
           `export` NamedExports `;`
           `export` VariableStatement[~Yield, +Await]
-          `export` Declaration[~Yield, +Await]
+          `export` [lookahead &notin; { `using`, `await` }] Declaration[~Yield, +Await]
           `export` `default` HoistableDeclaration[~Yield, +Await, +Default]
           `export` `default` ClassDeclaration[~Yield, +Await, +Default]
           `export` `default` [lookahead &notin; { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`
@@ -3470,8 +3469,7 @@ contributors: Nicolò Ribaudo
 
         NamedExports :
           `{` `}`
-          `{` ExportsList `}`
-          `{` ExportsList `,` `}`
+          `{` ExportsList `,`? `}`
 
         ExportsList :
           ExportSpecifier
@@ -3491,10 +3489,10 @@ contributors: Nicolò Ribaudo
         <emu-grammar>ExportDeclaration : `export` NamedExports `;`</emu-grammar>
         <ul>
           <li>
-            It is a Syntax Error if ReferencedBindings of |NamedExports| contains any |StringLiteral|s.
+            It is a Syntax Error if the ReferencedBindings of |NamedExports| contains any |StringLiteral|s.
           </li>
           <li>
-            For each |IdentifierName| _n_ in ReferencedBindings of |NamedExports|: It is a Syntax Error if StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, or *"static"*.
+            For each |IdentifierName| _n_ in the ReferencedBindings of |NamedExports|: It is a Syntax Error if the StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, or *"static"*.
           </li>
         </ul>
         <emu-note>
@@ -3645,7 +3643,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ExportDeclaration : `export` ExportFromClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
-          1. Let _module_ be the sole element of the ModuleRequests of <del>|FromClause|</del><ins>|ExportDeclaration|</ins>.
+          1. Let _module_ be the sole element of the ModuleRequests of |ExportDeclaration|.
           1. Return the ExportEntriesForModule of |ExportFromClause| with argument _module_.
         </emu-alg>
         <emu-grammar><ins>ExportDeclaration : `export` `defer` ExplicitExportFromClause FromClause WithClause? `;`</ins></emu-grammar>
