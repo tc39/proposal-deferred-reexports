@@ -974,6 +974,10 @@ contributors: Nicolò Ribaudo
           </table>
         </emu-table>
 
+        <emu-note type="editor">
+          <p>Replacing the inline description of ResolvedBinding Records in the ResolveExport row above with this table is an editorial change independent of this proposal. It could land in ECMA-262 separately, before this proposal.</p>
+        </emu-note>
+
         <emu-clause id="sec-EvaluateModuleSync" type="abstract operation">
           <h1>
             EvaluateModuleSync (
