@@ -469,6 +469,45 @@ contributors: Nicolò Ribaudo
           </table>
         </emu-table>
 
+        <p><ins>A <dfn id="moduleimportednames-record" variants="ModuleImportedNames Records">ModuleImportedNames Record</dfn> records the names that have been requested from a module. It has the fields listed in <emu-xref href="#table-moduleimportednames-fields"></emu-xref>.</ins></p>
+        <emu-table id="table-moduleimportednames-fields" caption="ModuleImportedNames Record Fields">
+          <table>
+            <tr>
+              <th>
+                Field Name
+              </th>
+              <th>
+                Value Type
+              </th>
+              <th>
+                Meaning
+              </th>
+            </tr>
+            <tr>
+              <td>
+                [[Module]]
+              </td>
+              <td>
+                a Cyclic Module Record
+              </td>
+              <td>
+                The module from which the names have been requested.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[ImportedNames]]
+              </td>
+              <td>
+                an ImportedNames Record
+              </td>
+              <td>
+                The names that have been requested from [[Module]].
+              </td>
+            </tr>
+          </table>
+        </emu-table>
+
         <p><ins>An <dfn id="optionalmodulerequest-record" variants="OptionalModuleRequest Records">OptionalModuleRequest Record</dfn> represents the request to import a module due to an optional indirect export (see <emu-xref href="#sec-GetOptionalIndirectExportsModuleRequests" title></emu-xref>) being imported. It is a ModuleRequest Record with the following additional fields:</ins></p>
         <emu-table id="table-optionalmodulerequest-fields" caption="OptionalModuleRequest Record Fields">
           <table>
@@ -891,7 +930,7 @@ contributors: Nicolò Ribaudo
             1. If ReadyForSyncExecution(_module_<ins>, _allImportedNames_, ~ignore-deferred-namespace~</ins>) is *false*, throw a *TypeError* exception.
             1. <ins>Let _evaluationList_ be « _module_ ».</ins>
             1. <ins>If _module_ is a Cyclic Module Record, then</ins>
-              1. <ins>Let _previouslyImportedNames_ be « the Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
+              1. <ins>Let _previouslyImportedNames_ be « the ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
               1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_.[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).</ins>
               1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _optionalIndirectRequests_, _previouslyImportedNames_, ~ignore-deferred-namespace~).</ins>
             1. <ins>For each Module Record _moduleToEvaluate_ of _evaluationList_, do</ins>
@@ -910,7 +949,7 @@ contributors: Nicolò Ribaudo
                 _module_: a Module Record,
                 <ins>_importedNames_: ~all~ or a List of Strings,</ins>
                 <ins>_onDeferredNamespace_: ~ignore-deferred-namespace~ or ~gather-async-deps~,</ins>
-                optional _seen_: a List of <del>Module Records</del><ins>Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record)</ins>,
+                optional _seen_: a List of <del>Module Records</del><ins>ModuleImportedNames Records</ins>,
               ): a Boolean
             </h1>
             <dl class="header">
@@ -924,8 +963,8 @@ contributors: Nicolò Ribaudo
               1. <del>If _seen_ contains _module_, return *true*.</del>
               1. <del>Append _module_ to _seen_.</del>
               1. <del>If IsModuleSCCEvaluated(_module_), return *true*.</del>
-              1. <ins>If _seen_ does not contain a Record whose [[Module]] field is _module_, then</ins>
-                1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _seen_.</ins>
+              1. <ins>If _seen_ does not contain a ModuleImportedNames Record whose [[Module]] field is _module_, then</ins>
+                1. <ins>Append the ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _seen_.</ins>
                 1. <ins>If IsModuleSCCEvaluated(_module_) is *false*, then</ins>
                   1. If _module_.[[Status]] is either ~evaluating~ or ~evaluating-async~, return *false*.
                   1. Assert: _module_.[[Status]] is either ~linked~ or ~evaluated~.
@@ -1216,7 +1255,7 @@ contributors: Nicolò Ribaudo
               </td>
               <td>
                 <del>a List of Cyclic Module Records</del>
-                <ins>a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record)</ins>
+                <ins>a List of ModuleImportedNames Records</ins>
               </td>
               <td>
                 It is a list of the Cyclic Module Records that have been already loaded by the current loading process, <ins>together with the list of bindings that have already been imported from them,</ins> to avoid infinite loops with circular dependencies.
@@ -1287,10 +1326,10 @@ contributors: Nicolò Ribaudo
               1. <del>If _module_ is a Cyclic Module Record, _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then</del>
               1. <ins>If _module_ is a Cyclic Module Record, then</ins>
                 1. <ins>Let _requestsToLoad_ be a new empty List.</ins>
-                1. <ins>If _state_.[[Visited]] does not contain a Record whose [[Module]] field is _module_, then</ins>
+                1. <ins>If _state_.[[Visited]] does not contain a ModuleImportedNames Record whose [[Module]] field is _module_, then</ins>
                   1. <ins>If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
                   1. <del>Append _module_ to _state_.[[Visited]].</del>
-                  1. <ins>Append the Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _state_.[[Visited]].</ins>
+                  1. <ins>Append the ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _state_.[[Visited]].</ins>
                 1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _state_.[[Visited]]).</ins>
                 1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _optionalIndirectRequests_.</ins>
                 1. Let _requestedModulesCount_ be the number of elements in <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>.
@@ -1310,7 +1349,7 @@ contributors: Nicolò Ribaudo
               1. If _state_.[[PendingModulesCount]] = 0, then
                 1. Set _state_.[[IsLoading]] to *false*.
                 1. <del>For each Cyclic Module Record _loaded_ of _state_.[[Visited]], do</del>
-                1. <ins>For each Record _loaded_ of _state_.[[Visited]], do</ins>
+                1. <ins>For each ModuleImportedNames Record _loaded_ of _state_.[[Visited]], do</ins>
                   1. If _loaded_<ins>.[[Module]]</ins>.[[Status]] is ~new~, set _loaded_<ins>.[[Module]]</ins>.[[Status]] to ~unlinked~.
                 1. Perform ! Call(_state_.[[PromiseCapability]].[[Resolve]], *undefined*, « *undefined* »).
               1. Return ~unused~.
@@ -1443,7 +1482,7 @@ contributors: Nicolò Ribaudo
                   _linkingList_: a List of Module Records,
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
-                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
+                  _previouslyImportedNames_: a List of ModuleImportedNames Records,
                 ): ~unused~
               </ins>
             </h1>
@@ -1458,8 +1497,8 @@ contributors: Nicolò Ribaudo
                 1. If _linkingList_ does not contain _requiredModule_, then
                   1. Append _requiredModule_ to _linkingList_.
                   1. If _requiredModule_ is a Cyclic Module Record, then
-                    1. Assert: _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_.
-                    1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                    1. Assert: _previouslyImportedNames_ does not contain a ModuleImportedNames Record whose [[Module]] field is _requiredModule_.
+                    1. Append the ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
                   1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
@@ -1471,7 +1510,7 @@ contributors: Nicolò Ribaudo
             <h1>
               <ins>
                 ValidateAllRequestedOptionalNamespaceExports (
-                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
+                  _previouslyImportedNames_: a List of ModuleImportedNames Records,
                 ): either a normal completion containing ~unused~ or a throw completion
               </ins>
             </h1>
@@ -1480,7 +1519,7 @@ contributors: Nicolò Ribaudo
               <dd>It is performed once BuildLinkingList has collected in _previouslyImportedNames_ the names requested from each module while linking, and it validates the `export defer` declarations that those requests make reachable.</dd>
             </dl>
             <emu-alg>
-              1. For each Record { [[Module]], [[ImportedNames]] } _r_ of _previouslyImportedNames_, do
+              1. For each ModuleImportedNames Record _r_ of _previouslyImportedNames_, do
                 1. Let _names_ be _r_.[[ImportedNames]].
                 1. If _names_.[[Namespace]] is ~all~, perform ? ValidateOwnNamespaceExports(_r_.[[Module]], ~all~).
                 1. Perform ? ValidateRequestedOptionalIndirectExports(_r_.[[Module]], MergeImportedNames(_names_.[[Direct]], _names_.[[Namespace]])).
@@ -1683,7 +1722,7 @@ contributors: Nicolò Ribaudo
                   _evaluationList_: a List of Module Records,
                   _referrer_: a Cyclic Module Record,
                   _moduleRequests_: a List of ModuleRequest Records,
-                  _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
+                  _previouslyImportedNames_: a List of ModuleImportedNames Records,
                   _onDeferredNamespace_: ~ignore-deferred-namespace~ or ~gather-async-deps~,
                 ): ~unused~
               </ins>
@@ -1703,8 +1742,8 @@ contributors: Nicolò Ribaudo
                   1. Else if _evaluationList_ does not contain _requiredModule_, then
                     1. Append _requiredModule_ to _evaluationList_.
                   1. If _requiredModule_ is a Cyclic Module Record, then
-                    1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
-                      1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                    1. If _previouslyImportedNames_ does not contain a ModuleImportedNames Record whose [[Module]] field is _requiredModule_, then
+                      1. Append the ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
                     1. [id="step-buildevaluationlist-namespace-importednames"] If _onDeferredNamespace_ is ~gather-async-deps~ and _request_.[[ImportedNames]].[[Namespace]] is either ~all~ or not empty, then
                       1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
                       1. Let _seen_ be a new empty List.
@@ -1749,7 +1788,7 @@ contributors: Nicolò Ribaudo
               GatherAsynchronousTransitiveDependencies (
                 _module_: a Module Record,
                 optional _seen_: a List of Module Records,
-                <ins>optional _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),</ins>
+                <ins>optional _previouslyImportedNames_: a List of ModuleImportedNames Records,</ins>
               ): a List of Module Records
             </h1>
             <dl class="header">
@@ -1784,7 +1823,7 @@ contributors: Nicolò Ribaudo
                     _referrer_: a Cyclic Module Record,
                     _moduleRequests_: a List of ModuleRequest Records,
                     _seen_: a List of Module Records,
-                    _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
+                    _previouslyImportedNames_: a List of ModuleImportedNames Records,
                   ): a List of Module Records
                 </ins>
               </h1>
@@ -1799,8 +1838,8 @@ contributors: Nicolò Ribaudo
                   1. Let _requiredModule_ be GetImportedModule(_referrer_, _request_).
                   1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_, _previouslyImportedNames_)).
                   1. If _requiredModule_ is a Cyclic Module Record, then
-                    1. If _previouslyImportedNames_ does not contain a Record whose [[Module]] field is _requiredModule_, then
-                      1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                    1. If _previouslyImportedNames_ does not contain a ModuleImportedNames Record whose [[Module]] field is _requiredModule_, then
+                      1. Append the ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
                     1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
                     1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
                 1. Return _result_.
@@ -1815,7 +1854,7 @@ contributors: Nicolò Ribaudo
               GetNewOptionalIndirectExportsModuleRequests (
                 _module_: a Cyclic Module Record,
                 _importedNames_: an ImportedNames Record,
-                _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
+                _previouslyImportedNames_: a List of ModuleImportedNames Records,
               ): a List of OptionalModuleRequest Records
             </ins>
           </h1>
@@ -1825,8 +1864,8 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. Assert: _previouslyImportedNames_ contains a Record whose [[Module]] field is _module_.
-            1. Let _previous_ be the Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
+            1. Assert: _previouslyImportedNames_ contains a ModuleImportedNames Record whose [[Module]] field is _module_.
+            1. Let _previous_ be the ModuleImportedNames Record in _previouslyImportedNames_ whose [[Module]] field is _module_.
             1. Let _previousNames_ be _previous_.[[ImportedNames]].
             1. Let _newDirectImportedNames_ be ExcludeImportedNames(_importedNames_.[[Direct]], _previousNames_.[[Direct]]).
             1. Let _newNamespaceImportedNames_ be ExcludeImportedNames(_importedNames_.[[Namespace]], _previousNames_.[[Namespace]]).
@@ -1840,19 +1879,19 @@ contributors: Nicolò Ribaudo
           <h1>
             <ins>
               CopyPreviouslyImportedNames (
-                _previouslyImportedNames_: a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record),
-              ): a List of Records with fields [[Module]] (a Cyclic Module Record) and [[ImportedNames]] (an ImportedNames Record)
+                _previouslyImportedNames_: a List of ModuleImportedNames Records,
+              ): a List of ModuleImportedNames Records
             </ins>
           </h1>
           <dl class="header"></dl>
 
           <emu-alg>
             1. Let _copy_ be a new empty List.
-            1. For each Record { [[Module]], [[ImportedNames]] } _r_ of _previouslyImportedNames_, do
+            1. For each ModuleImportedNames Record _r_ of _previouslyImportedNames_, do
               1. Let _names_ be _r_.[[ImportedNames]].
               1. If _names_.[[Direct]] is ~all~, let _direct_ be ~all~; else let _direct_ be a copy of the List _names_.[[Direct]].
               1. If _names_.[[Namespace]] is ~all~, let _namespace_ be ~all~; else let _namespace_ be a copy of the List _names_.[[Namespace]].
-              1. Append the Record { [[Module]]: _r_.[[Module]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _direct_, [[Namespace]]: _namespace_ } } to _copy_.
+              1. Append the ModuleImportedNames Record { [[Module]]: _r_.[[Module]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _direct_, [[Namespace]]: _namespace_ } } to _copy_.
             1. Return _copy_.
           </emu-alg>
         </emu-clause>
