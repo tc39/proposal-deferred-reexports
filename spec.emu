@@ -253,7 +253,7 @@ contributors: Nicolò Ribaudo
                 1. <ins>Else if _names_ does not contain _next_, then</ins>
                   1. <ins>Append _next_ to _names_.</ins>
               1. <ins>Set _importedNames_ to _names_.</ins>
-          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: _importedNames_ }</ins> }.
+          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, <ins>[[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: _importedNames_ }</ins> }.
           1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
@@ -591,7 +591,7 @@ contributors: Nicolò Ribaudo
           1. Let _specifier_ be the SV of |FromClause|.
           1. <ins>Let _directImportedNames_ be the DirectImportedNames of |ImportClause|.</ins>
           1. <ins>Let _filteredNamespaceImportedNames_ be the FilteredNamespaceImportedNames of |ImportClause|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause `;`</emu-grammar>
         <emu-alg>
@@ -599,18 +599,18 @@ contributors: Nicolò Ribaudo
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _directImportedNames_ be the DirectImportedNames of |ImportClause|.</ins>
           1. <ins>Let _filteredNamespaceImportedNames_ be the FilteredNamespaceImportedNames of |ImportClause|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
         <emu-alg>
           1. Let _specifier_ be the SV of |ModuleSpecifier|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause `;`</emu-grammar>
         <emu-alg>
           1. Let _specifier_ be the SV of |ModuleSpecifier|.
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~evaluation~, <ins>[[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`
@@ -619,7 +619,7 @@ contributors: Nicolò Ribaudo
           1. Let _specifier_ be the SV of |FromClause|.
           1. <ins>Let _directImportedNames_ be the DirectImportedNames of |NameSpaceImport|.</ins>
           1. <ins>Let _filteredNamespaceImportedNames_ be the FilteredNamespaceImportedNames of |NameSpaceImport|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~, <ins>[[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
         </emu-alg>
         <emu-grammar>
           ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`
@@ -629,7 +629,7 @@ contributors: Nicolò Ribaudo
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
           1. <ins>Let _directImportedNames_ be the DirectImportedNames of |NameSpaceImport|.</ins>
           1. <ins>Let _filteredNamespaceImportedNames_ be the FilteredNamespaceImportedNames of |NameSpaceImport|.</ins>
-          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~, <ins>[[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ }</ins> }.
         </emu-alg>
         <emu-grammar>
           ExportDeclaration : `export` ExportFromClause FromClause `;`
@@ -693,7 +693,7 @@ contributors: Nicolò Ribaudo
             1. Let _specifier_ be the SV of _fromClause_.
             1. If _withClause_ is present, let _attrs_ be WithClauseToAttributes of _withClause_.
             1. Else, let _attrs_ be a new empty List.
-            1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ } }.
+            1. Return the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: _phase_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _directImportedNames_, [[Namespace]]: _filteredNamespaceImportedNames_ } }.
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -920,13 +920,13 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. <ins>If _importedNames_ is not present, set _importedNames_ to the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }.</ins>
+            1. <ins>If _importedNames_ is not present, set _importedNames_ to a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }.</ins>
             1. <ins>Let _allImportedNames_ be MergeImportedNames(_importedNames_.[[Direct]], _importedNames_.[[Namespace]]).</ins>
             1. If ReadyForSyncExecution(_module_<ins>, _allImportedNames_, ~ignore-deferred-namespace~</ins>) is *false*, throw a *TypeError* exception.
             1. <ins>Let _evaluationList_ be « _module_ ».</ins>
             1. <ins>If _module_ is a Cyclic Module Record, then</ins>
-              1. <ins>Let _previouslyImportedNames_ be « the ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
-              1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_.[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).</ins>
+              1. <ins>Let _previouslyImportedNames_ be « a new ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } ».</ins>
+              1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, a new ImportedNames Record { [[Direct]]: _importedNames_.[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).</ins>
               1. <ins>Perform BuildEvaluationList(_evaluationList_, _module_, _optionalIndirectRequests_, _previouslyImportedNames_, ~ignore-deferred-namespace~).</ins>
             1. <ins>For each Module Record _moduleToEvaluate_ of _evaluationList_, do</ins>
               1. Let _promise_ be <del>_module_</del><ins>_moduleToEvaluate_</ins>.Evaluate().
@@ -959,7 +959,7 @@ contributors: Nicolò Ribaudo
               1. <del>Append _module_ to _seen_.</del>
               1. <del>If IsModuleSCCEvaluated(_module_), return *true*.</del>
               1. <ins>If _seen_ does not contain a ModuleImportedNames Record whose [[Module]] field is _module_, then</ins>
-                1. <ins>Append the ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _seen_.</ins>
+                1. <ins>Append a new ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _seen_.</ins>
                 1. <ins>If IsModuleSCCEvaluated(_module_) is *false*, then</ins>
                   1. If _module_.[[Status]] is either ~evaluating~ or ~evaluating-async~, return *false*.
                   1. Assert: _module_.[[Status]] is either ~linked~ or ~evaluated~.
@@ -969,7 +969,7 @@ contributors: Nicolò Ribaudo
                     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
                     1. If ReadyForSyncExecution(_requiredModule_, <ins>AllImportedNames(_request_), ~gather-async-deps~,</ins> <del>_seen_</del><ins>_seenForAsyncDeps_</ins>) is *false*, then
                       1. Return *false*.
-              1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _seen_), do</ins>
+              1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, a new ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _seen_), do</ins>
                 1. <ins>If _request_.[[Phase]] is ~evaluation~, then</ins>
                   1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
                   1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_), _onDeferredNamespace_, _seen_) is *false*, return *false*.</ins>
@@ -1324,8 +1324,8 @@ contributors: Nicolò Ribaudo
                 1. <ins>If _state_.[[Visited]] does not contain a ModuleImportedNames Record whose [[Module]] field is _module_, then</ins>
                   1. <ins>If _module_.[[Status]] is ~new~, set _requestsToLoad_ to _module_.[[RequestedModules]].</ins>
                   1. <del>Append _module_ to _state_.[[Visited]].</del>
-                  1. <ins>Append the ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _state_.[[Visited]].</ins>
-                1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, the ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _state_.[[Visited]]).</ins>
+                  1. <ins>Append a new ModuleImportedNames Record { [[Module]]: _module_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _state_.[[Visited]].</ins>
+                1. <ins>Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_module_, a new ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _state_.[[Visited]]).</ins>
                 1. <ins>Set _requestsToLoad_ to the list-concatenation of _requestsToLoad_ and _optionalIndirectRequests_.</ins>
                 1. Let _requestedModulesCount_ be the number of elements in <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>.
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
@@ -1493,7 +1493,7 @@ contributors: Nicolò Ribaudo
                   1. Append _requiredModule_ to _linkingList_.
                   1. If _requiredModule_ is a Cyclic Module Record, then
                     1. Assert: _previouslyImportedNames_ does not contain a ModuleImportedNames Record whose [[Module]] field is _requiredModule_.
-                    1. Append the ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                    1. Append a new ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
                   1. Perform BuildLinkingList(_linkingList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_).
@@ -1738,13 +1738,13 @@ contributors: Nicolò Ribaudo
                     1. Append _requiredModule_ to _evaluationList_.
                   1. If _requiredModule_ is a Cyclic Module Record, then
                     1. If _previouslyImportedNames_ does not contain a ModuleImportedNames Record whose [[Module]] field is _requiredModule_, then
-                      1. Append the ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                      1. Append a new ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
                     1. [id="step-buildevaluationlist-namespace-importednames"] If _onDeferredNamespace_ is ~gather-async-deps~ and _request_.[[ImportedNames]].[[Namespace]] is either ~all~ or not empty, then
-                      1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
+                      1. Let _namespaceOptionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: _request_.[[ImportedNames]].[[Namespace]] }, _previouslyImportedNames_).
                       1. Let _seen_ be a new empty List.
                       1. Let _previouslyImportedNamesCopy_ be CopyPreviouslyImportedNames(_previouslyImportedNames_).
                       1. Perform ListAppendUnique(_evaluationList_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _namespaceOptionalIndirectRequests_, _seen_, _previouslyImportedNamesCopy_)).
-                    1. [id="step-buildevaluationlist-direct-importednames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, the ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
+                    1. [id="step-buildevaluationlist-direct-importednames"] Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, a new ImportedNames Record { [[Direct]]: _request_.[[ImportedNames]].[[Direct]], [[Namespace]]: « » }, _previouslyImportedNames_).
                     1. Perform BuildEvaluationList(_evaluationList_, _requiredModule_, _optionalIndirectRequests_, _previouslyImportedNames_, _onDeferredNamespace_).
               1. Return ~unused~.
             </emu-alg>
@@ -1834,7 +1834,7 @@ contributors: Nicolò Ribaudo
                   1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_, _previouslyImportedNames_)).
                   1. If _requiredModule_ is a Cyclic Module Record, then
                     1. If _previouslyImportedNames_ does not contain a ModuleImportedNames Record whose [[Module]] field is _requiredModule_, then
-                      1. Append the ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: the ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
+                      1. Append a new ModuleImportedNames Record { [[Module]]: _requiredModule_, [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » } } to _previouslyImportedNames_.
                     1. Let _optionalIndirectRequests_ be GetNewOptionalIndirectExportsModuleRequests(_requiredModule_, _request_.[[ImportedNames]], _previouslyImportedNames_).
                     1. Perform ListAppendUnique(_result_, GatherAsynchronousTransitiveDependenciesForRequests(_requiredModule_, _optionalIndirectRequests_, _seen_, _previouslyImportedNames_)).
                 1. Return _result_.
@@ -1886,7 +1886,7 @@ contributors: Nicolò Ribaudo
               1. Let _names_ be _r_.[[ImportedNames]].
               1. If _names_.[[Direct]] is ~all~, let _direct_ be ~all~; else let _direct_ be a copy of the List _names_.[[Direct]].
               1. If _names_.[[Namespace]] is ~all~, let _namespace_ be ~all~; else let _namespace_ be a copy of the List _names_.[[Namespace]].
-              1. Append the ModuleImportedNames Record { [[Module]]: _r_.[[Module]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _direct_, [[Namespace]]: _namespace_ } } to _copy_.
+              1. Append a new ModuleImportedNames Record { [[Module]]: _r_.[[Module]], [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _direct_, [[Namespace]]: _namespace_ } } to _copy_.
             1. Return _copy_.
           </emu-alg>
         </emu-clause>
@@ -2886,7 +2886,7 @@ contributors: Nicolò Ribaudo
                     1. Set _existingRequest_.[[ImportedNames]].[[Direct]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Direct]], _newDirectImportedNames_).
                     1. Set _existingRequest_.[[ImportedNames]].[[Namespace]] to MergeImportedNames(_existingRequest_.[[ImportedNames]].[[Namespace]], _newNamespaceImportedNames_).
                   1. Else,
-                    1. Let _newRequest_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: the ImportedNames Record { [[Direct]]: _newDirectImportedNames_, [[Namespace]]: _newNamespaceImportedNames_ }, [[IsStarExport]]: _isStarExport_ }.
+                    1. Let _newRequest_ be the OptionalModuleRequest Record { [[Specifier]]: _nextRequest_.[[Specifier]], [[Attributes]]: _nextRequest_.[[Attributes]], [[Phase]]: _nextRequest_.[[Phase]], [[ImportedNames]]: a new ImportedNames Record { [[Direct]]: _newDirectImportedNames_, [[Namespace]]: _newNamespaceImportedNames_ }, [[IsStarExport]]: _isStarExport_ }.
                     1. Append _newRequest_ to _requests_.
               1. Return _requests_.
             </emu-alg>
