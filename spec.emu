@@ -1872,13 +1872,13 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. If _seen_ is not present, set _seen_ to a new empty List.
               1. <ins>If _previouslyImportedNames_ is not present, set _previouslyImportedNames_ to a new empty List.</ins>
-              1. <del>Let _result_ be a new empty List</del>.
+              1. <del>Let _result_ be a new empty List.</del>
               1. If _seen_ contains _module_, return <del>_result_</del><ins>a new empty List</ins>.
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return <del>_result_</del><ins>a new empty List</ins>.
               1. If _module_.[[Status]] is ~evaluating~ or IsModuleSCCEvaluated(_module_) is *true*, return <del>_result_</del><ins>a new empty List</ins>.
               1. If _module_.[[HasTLA]] is *true*, then
-                1. <del>Append _module_ to _result_</del>.
+                1. <del>Append _module_ to _result_.</del>
                 1. Return <del>_result_</del><ins>« _module_ »</ins>.
               1. <del>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</del>
                 1. <del>Let _requiredModule_ be GetImportedModule(_module_, _request_).</del>
