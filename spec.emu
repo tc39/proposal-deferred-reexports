@@ -431,110 +431,116 @@ contributors: Nicolò Ribaudo
         </emu-table>
 
         <p><ins>An <dfn id="importednames-record" variants="ImportedNames Records">ImportedNames Record</dfn> represents the names imported from a module through a ModuleRequest Record. It has the fields listed in <emu-xref href="#table-importednames-fields"></emu-xref>.</ins></p>
-        <emu-table id="table-importednames-fields" caption="ImportedNames Record Fields">
-          <table>
-            <tr>
-              <th>
-                Field Name
-              </th>
-              <th>
-                Value Type
-              </th>
-              <th>
-                Meaning
-              </th>
-            </tr>
-            <tr>
-              <td>
-                [[Direct]]
-              </td>
-              <td>
-                ~all~ or a List of Strings
-              </td>
-              <td>
-                The list of non-namespace names imported from the requested module.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[Namespace]]
-              </td>
-              <td>
-                ~all~ or a List of Strings
-              </td>
-              <td>
-                The list of names imported from the requested module through a namespace object.
-              </td>
-            </tr>
-          </table>
-        </emu-table>
+        <ins class="block">
+          <emu-table id="table-importednames-fields" caption="ImportedNames Record Fields">
+            <table>
+              <tr>
+                <th>
+                  Field Name
+                </th>
+                <th>
+                  Value Type
+                </th>
+                <th>
+                  Meaning
+                </th>
+              </tr>
+              <tr>
+                <td>
+                  [[Direct]]
+                </td>
+                <td>
+                  ~all~ or a List of Strings
+                </td>
+                <td>
+                  The list of non-namespace names imported from the requested module.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  [[Namespace]]
+                </td>
+                <td>
+                  ~all~ or a List of Strings
+                </td>
+                <td>
+                  The list of names imported from the requested module through a namespace object.
+                </td>
+              </tr>
+            </table>
+          </emu-table>
+        </ins>
 
         <p><ins>A <dfn id="moduleimportednames-record" variants="ModuleImportedNames Records">ModuleImportedNames Record</dfn> records the names that have been requested from a module. It has the fields listed in <emu-xref href="#table-moduleimportednames-fields"></emu-xref>.</ins></p>
-        <emu-table id="table-moduleimportednames-fields" caption="ModuleImportedNames Record Fields">
-          <table>
-            <tr>
-              <th>
-                Field Name
-              </th>
-              <th>
-                Value Type
-              </th>
-              <th>
-                Meaning
-              </th>
-            </tr>
-            <tr>
-              <td>
-                [[Module]]
-              </td>
-              <td>
-                a Cyclic Module Record
-              </td>
-              <td>
-                The module from which the names have been requested.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[ImportedNames]]
-              </td>
-              <td>
-                an ImportedNames Record
-              </td>
-              <td>
-                The names that have been requested from [[Module]].
-              </td>
-            </tr>
-          </table>
-        </emu-table>
+        <ins class="block">
+          <emu-table id="table-moduleimportednames-fields" caption="ModuleImportedNames Record Fields">
+            <table>
+              <tr>
+                <th>
+                  Field Name
+                </th>
+                <th>
+                  Value Type
+                </th>
+                <th>
+                  Meaning
+                </th>
+              </tr>
+              <tr>
+                <td>
+                  [[Module]]
+                </td>
+                <td>
+                  a Cyclic Module Record
+                </td>
+                <td>
+                  The module from which the names have been requested.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  [[ImportedNames]]
+                </td>
+                <td>
+                  an ImportedNames Record
+                </td>
+                <td>
+                  The names that have been requested from [[Module]].
+                </td>
+              </tr>
+            </table>
+          </emu-table>
+        </ins>
 
         <p><ins>An <dfn id="optionalmodulerequest-record" variants="OptionalModuleRequest Records">OptionalModuleRequest Record</dfn> represents the request to import a module due to an optional indirect export (see <emu-xref href="#sec-GetOptionalIndirectExportsModuleRequests" title></emu-xref>) being imported. It is a ModuleRequest Record with the following additional fields:</ins></p>
-        <emu-table id="table-optionalmodulerequest-fields" caption="OptionalModuleRequest Record Fields">
-          <table>
-            <tr>
-              <th>
-                Field Name
-              </th>
-              <th>
-                Value Type
-              </th>
-              <th>
-                Meaning
-              </th>
-            </tr>
-            <tr>
-              <td>
-                [[IsStarExport]]
-              </td>
-              <td>
-                a Boolean
-              </td>
-              <td>
-                Indicates whether the request is not due to an own optional export, but due to the module re-exposing the requested module's optional exports. In Source Text Module Records this is done by `export * from` declarations.
-              </td>
-            </tr>
-          </table>
-        </emu-table>
+        <ins class="block">
+          <emu-table id="table-optionalmodulerequest-fields" caption="OptionalModuleRequest Record Fields">
+            <table>
+              <tr>
+                <th>
+                  Field Name
+                </th>
+                <th>
+                  Value Type
+                </th>
+                <th>
+                  Meaning
+                </th>
+              </tr>
+              <tr>
+                <td>
+                  [[IsStarExport]]
+                </td>
+                <td>
+                  a Boolean
+                </td>
+                <td>
+                  Indicates whether the request is not due to an own optional export, but due to the module re-exposing the requested module's optional exports. In Source Text Module Records this is done by `export * from` declarations.
+                </td>
+              </tr>
+            </table>
+          </emu-table>
+        </ins>
 
         <emu-clause id="sec-AllImportedNames" type="abstract operation">
           <h1>
@@ -936,43 +942,45 @@ contributors: Nicolò Ribaudo
         </emu-table>
 
         <p><ins>A <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn> has the following fields:</ins></p>
-        <emu-table id="table-resolvedbinding-fields" caption="ResolvedBinding Record Fields">
-          <table>
-            <tr>
-              <th>
-                Field Name
-              </th>
-              <th>
-                Value Type
-              </th>
-              <th>
-                Meaning
-              </th>
-            </tr>
-            <tr>
-              <td>
-                [[Module]]
-              </td>
-              <td>
-                a Module Record
-              </td>
-              <td>
-                The module that provides the binding
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[BindingName]]
-              </td>
-              <td>
-                a String, ~namespace~, <ins>or ~deferred-namespace~</ins>
-              </td>
-              <td>
-                The name of the binding within that module, or ~namespace~ <ins>or ~deferred-namespace~</ins> if the export is the module's <ins>(deferred)</ins> namespace object.
-              </td>
-            </tr>
-          </table>
-        </emu-table>
+        <ins class="block">
+          <emu-table id="table-resolvedbinding-fields" caption="ResolvedBinding Record Fields">
+            <table>
+              <tr>
+                <th>
+                  Field Name
+                </th>
+                <th>
+                  Value Type
+                </th>
+                <th>
+                  Meaning
+                </th>
+              </tr>
+              <tr>
+                <td>
+                  [[Module]]
+                </td>
+                <td>
+                  a Module Record
+                </td>
+                <td>
+                  The module that provides the binding
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  [[BindingName]]
+                </td>
+                <td>
+                  a String, ~namespace~, <ins>or ~deferred-namespace~</ins>
+                </td>
+                <td>
+                  The name of the binding within that module, or ~namespace~ <ins>or ~deferred-namespace~</ins> if the export is the module's <ins>(deferred)</ins> namespace object.
+                </td>
+              </tr>
+            </table>
+          </emu-table>
+        </ins>
 
         <emu-note type="editor">
           <p>Replacing the inline description of ResolvedBinding Records in the ResolveExport row above with this table is an editorial change independent of this proposal. It could land in ECMA-262 separately, before this proposal.</p>
