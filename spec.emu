@@ -505,7 +505,10 @@ contributors: Nicolò Ribaudo
               ): ~all~ or a List of Strings
             </ins>
           </h1>
-          <dl class="header"></dl>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It returns all the names imported through _moduleRequest_, either directly or through a namespace object.</dd>
+          </dl>
 
           <emu-alg>
             1. Return MergeImportedNames(_moduleRequest_.[[ImportedNames]].[[Direct]], _moduleRequest_.[[ImportedNames]].[[Namespace]]).
@@ -645,7 +648,10 @@ contributors: Nicolò Ribaudo
               ): a ModuleRequest Record
             </ins>
           </h1>
-          <dl class="header"></dl>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It returns the ModuleRequest Record for an `export … from` or `export defer … from` declaration.</dd>
+          </dl>
 
           <emu-alg>
             1. Let _directImportedNames_ be the DirectImportedNames of _exportFromClause_.
@@ -1140,7 +1146,7 @@ contributors: Nicolò Ribaudo
                 </ins>
               </td>
               <td>
-                <p><ins>It computes the Module Requests for the optional dependencies needed to be able to import _importedNames_ from this module, which are only loaded, linked, and evaluated when some of the names they provide are imported. In case of a Source Text Module Record, these are the dependencies specified through `export defer`, and the dependencies specified through `export * from` that may re-export `export defer` bindings of other modules.</ins></p>
+                <p><ins>It computes the ModuleRequest Records for the optional dependencies needed to be able to import _importedNames_ from this module, which are only loaded, linked, and evaluated when some of the names they provide are imported. In case of a Source Text Module Record, these are the dependencies specified through `export defer`, and the dependencies specified through `export * from` that may re-export `export defer` bindings of other modules.</ins></p>
 
                 <p><ins>This abstract method has the following default implementation:</ins></p>
                 <emu-alg>
@@ -1441,7 +1447,10 @@ contributors: Nicolò Ribaudo
                 ): ~unused~
               </ins>
             </h1>
-            <dl class="header"></dl>
+            <dl class="header">
+              <dt>description</dt>
+              <dd>It appends to _linkingList_, in depth-first pre-order, the modules requested by _referrer_ through _moduleRequests_ and through the `export defer` and `export * from` declarations reachable from them.</dd>
+            </dl>
 
             <emu-alg>
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
@@ -1723,7 +1732,10 @@ contributors: Nicolò Ribaudo
                   ): ~unused~
                 </ins>
               </h1>
-              <dl class="header"></dl>
+              <dl class="header">
+                <dt>description</dt>
+                <dd>It appends to _list1_ each element of _list2_ that _list1_ does not already contain.</dd>
+              </dl>
               <emu-alg>
                 1. For each Record _r_ of _list2_, do
                   1. If _list1_ does not contain _r_, append _r_ to _list1_.
@@ -1778,7 +1790,7 @@ contributors: Nicolò Ribaudo
               </h1>
               <dl class="header">
                 <dt>description</dt>
-                <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
+                <dd>It collects the direct post-order list of asynchronous unexecuted transitive dependencies of the modules requested by _referrer_ through _moduleRequests_, and through the `export defer` and `export * from` declarations reachable from them, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
               </dl>
 
               <emu-alg>
@@ -1809,7 +1821,7 @@ contributors: Nicolò Ribaudo
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd>It returns the Module Requests for the `export defer` dependencies of _module_ needed for the names in _importedNames_ that have not already been requested from _module_, and records those names in _previouslyImportedNames_.</dd>
+            <dd>It returns the ModuleRequest Records for the `export defer` dependencies of _module_ needed for the names in _importedNames_ that have not already been requested from _module_, and records those names in _previouslyImportedNames_.</dd>
           </dl>
 
           <emu-alg>
@@ -2563,7 +2575,10 @@ contributors: Nicolò Ribaudo
                   ): a List of Strings
                 </ins>
               </h1>
-              <dl class="header"></dl>
+              <dl class="header">
+                <dt>description</dt>
+                <dd>It returns the names that _module_ exports through its own export declarations, including its `export defer` declarations, but not the names provided by its `export * from` declarations.</dd>
+              </dl>
               <emu-alg>
                 1. Let _exportedNames_ be a new empty List.
                 1. For each ExportEntry Record _exportEntry_ of _module_.[[LocalExportEntries]], do
@@ -3230,7 +3245,7 @@ contributors: Nicolò Ribaudo
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd></dd>
+            <dd>It returns the union of _a_ and _b_.</dd>
           </dl>
 
           <emu-alg>
@@ -3275,7 +3290,7 @@ contributors: Nicolò Ribaudo
         </h1>
         <dl class="header">
           <dt>description</dt>
-          <dd>It returns the names that are imported to build a filtered namespace object, that is the names listed in an `import { a, b } as ns from "mod"` declaration or in an `export { a, b } as ns from "mod"` declaration. It is an empty List for every other declaration.</dd>
+          <dd>It returns the names that are imported to build a namespace object: the names listed in an `import { a, b } as ns from "mod"` or `export { a, b } as ns from "mod"` declaration, or ~all~ for an `import * as ns from "mod"` or `export * as ns from "mod"` declaration. It is an empty List for every other declaration.</dd>
         </dl>
 
         <emu-grammar>ImportClause : ImportedDefaultBinding `,` NameSpaceImport</emu-grammar>
