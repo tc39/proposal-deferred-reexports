@@ -540,17 +540,17 @@ contributors: Nicolò Ribaudo
           <h1>
             <ins>
               AllImportedNames (
-                _moduleRequest_: a ModuleRequest Record,
+                _importedNames_: an ImportedNames Record,
               ): ~all~ or a List of Strings
             </ins>
           </h1>
           <dl class="header">
             <dt>description</dt>
-            <dd>It returns all the names imported through _moduleRequest_, either directly or through a namespace object.</dd>
+            <dd>It returns all the names in _importedNames_, either imported directly or through a namespace object.</dd>
           </dl>
 
           <emu-alg>
-            1. Return MergeImportedNames(_moduleRequest_.[[ImportedNames]].[[Direct]], _moduleRequest_.[[ImportedNames]].[[Namespace]]).
+            1. Return MergeImportedNames(_importedNames_.[[Direct]], _importedNames_.[[Namespace]]).
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -921,7 +921,7 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. <ins>If _importedNames_ is not present, set _importedNames_ to a new ImportedNames Record { [[Direct]]: « », [[Namespace]]: « » }.</ins>
-            1. <ins>Let _allImportedNames_ be MergeImportedNames(_importedNames_.[[Direct]], _importedNames_.[[Namespace]]).</ins>
+            1. <ins>Let _allImportedNames_ be AllImportedNames(_importedNames_).</ins>
             1. If ReadyForSyncExecution(_module_<ins>, _allImportedNames_, ~ignore-deferred-namespace~</ins>) is *false*, throw a *TypeError* exception.
             1. <ins>Let _evaluationList_ be « _module_ ».</ins>
             1. <ins>If _module_ is a Cyclic Module Record, then</ins>
@@ -967,12 +967,12 @@ contributors: Nicolò Ribaudo
                   1. <ins>If _onDeferredNamespace_ is ~gather-async-deps~, let _seenForAsyncDeps_ be _seen_; else let _seenForAsyncDeps_ be a new empty List.</ins>
                   1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                     1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
-                    1. If ReadyForSyncExecution(_requiredModule_, <ins>AllImportedNames(_request_), ~gather-async-deps~,</ins> <del>_seen_</del><ins>_seenForAsyncDeps_</ins>) is *false*, then
+                    1. If ReadyForSyncExecution(_requiredModule_, <ins>AllImportedNames(_request_.[[ImportedNames]]), ~gather-async-deps~,</ins> <del>_seen_</del><ins>_seenForAsyncDeps_</ins>) is *false*, then
                       1. Return *false*.
               1. <ins>For each ModuleRequest Record _request_ of GetNewOptionalIndirectExportsModuleRequests(_module_, a new ImportedNames Record { [[Direct]]: _importedNames_, [[Namespace]]: « » }, _seen_), do</ins>
                 1. <ins>If _request_.[[Phase]] is ~evaluation~, then</ins>
                   1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
-                  1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_), _onDeferredNamespace_, _seen_) is *false*, return *false*.</ins>
+                  1. <ins>If ReadyForSyncExecution(_requiredModule_, AllImportedNames(_request_.[[ImportedNames]]), _onDeferredNamespace_, _seen_) is *false*, return *false*.</ins>
                 1. <ins>Else,</ins>
                   1. <ins>Assert: _request_.[[Phase]] is ~defer~.</ins>
                   1. <ins>If _onDeferredNamespace_ is ~gather-async-deps~, then</ins>
@@ -1332,9 +1332,9 @@ contributors: Nicolò Ribaudo
                 1. For each ModuleRequest Record _request_ of <del>_module_.[[RequestedModules]]</del><ins>_requestsToLoad_</ins>, do
                   1. If AllImportAttributesSupported(_request_.[[Attributes]]) is *false*, then
                     1. Let _error_ be ThrowCompletion(a newly created *SyntaxError* object).
-                    1. Perform ContinueModuleLoading(_state_, _error_, <ins>AllImportedNames(_request_)</ins>).
+                    1. Perform ContinueModuleLoading(_state_, _error_, <ins>AllImportedNames(_request_.[[ImportedNames]])</ins>).
                   1. Else if _module_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsKeyEqual(_record_, _request_) is *true*, then
-                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>AllImportedNames(_request_)</ins>).
+                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]], <ins>AllImportedNames(_request_.[[ImportedNames]])</ins>).
                   1. Else,
                     1. Perform HostLoadImportedModule(_module_, _request_, _state_.[[HostDefined]], _state_).
                     1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
@@ -1517,7 +1517,7 @@ contributors: Nicolò Ribaudo
               1. For each ModuleImportedNames Record _r_ of _previouslyImportedNames_, do
                 1. Let _names_ be _r_.[[ImportedNames]].
                 1. If _names_.[[Namespace]] is ~all~, perform ? ValidateOwnNamespaceExports(_r_.[[Module]], ~all~).
-                1. Perform ? ValidateRequestedOptionalIndirectExports(_r_.[[Module]], MergeImportedNames(_names_.[[Direct]], _names_.[[Namespace]])).
+                1. Perform ? ValidateRequestedOptionalIndirectExports(_r_.[[Module]], AllImportedNames(_names_)).
               1. Return ~unused~.
             </emu-alg>
           </emu-clause>
@@ -2914,9 +2914,9 @@ contributors: Nicolò Ribaudo
             1. Else,
               1. Append the LoadedModuleRequest Record { [[Specifier]]: _moduleRequest_.[[Specifier]], [[Attributes]]: _moduleRequest_.[[Attributes]], [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
           1. If _payload_ is a GraphLoadingState Record, then
-            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>AllImportedNames(_moduleRequest_)</ins>).
+            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>AllImportedNames(_moduleRequest_.[[ImportedNames]])</ins>).
           1. Else,
-            1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]], <ins>AllImportedNames(_moduleRequest_)</ins>).
+            1. Perform ContinueDynamicImport(_payload_, _result_, _moduleRequest_.[[Phase]], <ins>AllImportedNames(_moduleRequest_.[[ImportedNames]])</ins>).
           1. Return ~unused~.
         </emu-alg>
       </emu-clause>
