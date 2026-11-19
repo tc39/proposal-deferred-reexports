@@ -115,11 +115,13 @@ contributors: Nicolò Ribaudo
 
         <emu-clause id="sec-EnsureDeferredExportEvaluated" type="abstract operation">
           <h1>
-            EnsureDeferredExportEvaluated (
-              _module_: a Cyclic Module Record,
-              _exportName_: a String,
-              _seen_: a List of Module Records,
-            ): either a normal completion containing ~unused~ or a throw completion
+            <ins>
+              EnsureDeferredExportEvaluated (
+                _module_: a Cyclic Module Record,
+                _exportName_: a String,
+                _seen_: a List of Module Records,
+              ): either a normal completion containing ~unused~ or a throw completion
+            </ins>
           </h1>
           <dl class="header">
             <dt>description</dt>
