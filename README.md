@@ -288,7 +288,7 @@ The proposed ordering is also much simpler to polyfill in tools, which can extra
 
 ### Namespace imports
 
-By default, module namespace objects expose all of the exports of a module: `export defer` will "deoptimize" and eagerly load all of the deferred re-exports, but still allow lazy execution of them:
+By default, module namespace objects expose all of the exports of a module: `export defer` will "deoptimize" and eagerly load and execute all of the deferred re-exports. `export defer` only defers _loading_: once a deferred re-export is imported, either directly or through a namespace object, it is executed together with the module that re-exports it. To also defer execution, `export defer` can be combined with `import defer` (see [below](#integration-with-import-defer)).
 
 ```js
 // math.js
@@ -299,18 +299,14 @@ console.log('executed math');
 ```
 ```js
 // index.js
-import * as math from "./math.js"; // Loads everything (both ./math.js and ./math/mul.js), logs 'executed math'
-
-math.add; // Executes ./math/add.js
-math.sub; // Executes ./math/sub.js
+import * as math from "./math.js"; // Loads and executes everything (./math.js, ./math/mul.js, ./math/add.js and ./math/sub.js), logs 'executed math'
 ```
 
 To only load selected re-exports, developers can specify the names that want in the module namespace using a _filtered namespace import_:
 ```js
 // index.js
-import { add, mul } as math from "./math.js"; // Loads ./math.js, ./math/mul.js and ./math/add.js (but not ./math/sub.js), logs 'executed math'
+import { add, mul } as math from "./math.js"; // Loads and executes ./math.js, ./math/mul.js and ./math/add.js (but not ./math/sub.js), logs 'executed math'
 
-math.add; // Executes ./math/add.js
 math.sub; // undefined, as it's not part of the filtered namespace
 ```
 
@@ -344,7 +340,7 @@ This means that whether `./math/add.js` and `./math/sub.js` are loaded or not de
 
 ### Integration with `import defer`
 
-The `import defer` proposal established that the `defer` keyword means "only execute this module when I actually need it", when using _namespace_ imports. When interacting with `export defer`, this allows for lazily executing the wrapper modules as well:
+The `import defer` proposal established that the `defer` keyword means "only execute this module when I actually need it", when using _namespace_ imports. When interacting with `export defer`, the deferred re-exports exposed by the namespace are executed together with the wrapper module, when the namespace is first accessed:
 
 ```js
 // math.js
@@ -355,10 +351,10 @@ console.log('executed math');
 ```
 ```js
 // index.js
-import defer * as math from "./math.js"; // Loads everything (both ./math.js and ./math/mul.js), no execution at all
+import defer * as math from "./math.js"; // Loads everything, no execution at all
 
-math.add; // Executes ./math/add.js, logs 'executed math'
-math.sub; // Executes ./math/sub.js
+math.add; // Executes ./math.js and its eager dependencies, then ./math/add.js and ./math/sub.js
+math.sub; // Already executed
 ```
 
 All dependencies are still loaded upfront, and deferred modules that use top-level await are pre-executed (like when using the `import defer` proposal alone), so that they are synchronously available upon request.
@@ -370,15 +366,25 @@ import defer { add, mul } as math from "./math.js";
 const math2 = await import.defer("./math.js", { exports: ["add", "mul"] });
 ```
 
+Each filtered namespace only executes the deferred re-exports that it exposes. The same module can be imported through multiple filtered namespaces, each executing a different deferred re-export when it is first accessed:
+```js
+// index.js
+import defer { add } as addition from "./math.js";
+import defer { sub } as subtraction from "./math.js";
+
+addition.add; // Executes ./math.js and its eager dependencies, then ./math/add.js
+subtraction.sub; // Executes ./math/sub.js (./math.js was already executed)
+```
+
 By the same symmetry, re-exporting a namespace with `export defer` creates a deferred namespace: the dependency is only loaded when the namespace is imported, and only executed when one of its exports is accessed.
 ```js
 // index.js
 export defer * as math from "./math.js";
-export defer { add, sub } as arith from "./math.js";
+export defer { add } as arith from "./math.js";
 ```
 ```js
 import { arith } from "./index.js"; // Loads ./math.js and its dependencies, no execution
-arith.add; // Executes ./math/add.js and ./math.js
+arith.add; // Executes ./math.js and its eager dependencies, then ./math/add.js
 ```
 
 ### Comparison with `package.json#exports`
